@@ -78,7 +78,27 @@ class Generate:
                 pass
             pool.close()
             pool.join()
+        
         print("Processing completed.")
+        self.cleanup_output(len(data))
+
+    def cleanup_output(self, data_length):
+        valid_items = []
+        
+        with open(self.output_file, "r", encoding='utf-8') as f:
+            for line in f:
+                try:
+                    item = json.loads(line)
+                    if self.model_name in item and item[self.model_name] != -1:
+                        valid_items.append(item)
+                except json.JSONDecodeError:
+                    continue
+
+        with open(self.output_file, "w", encoding='utf-8') as f:
+            for item in valid_items:
+                f.write(json.dumps(item, ensure_ascii=False) + '\n')
+
+        print(f"Total successful items: {len(valid_items)}. \n Remaining items to process: {data_length - len(valid_items)}.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate responses using LLMs model.")

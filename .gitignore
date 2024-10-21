@@ -1,3 +1,5 @@
 *.json
 *.ipynb
 *.md
+__pycache__/*
+*.sh
