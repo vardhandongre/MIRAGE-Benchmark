@@ -3,3 +3,4 @@
 *.md
 __pycache__/*
 *.sh
+SampleShow.py

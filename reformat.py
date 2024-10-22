@@ -1,0 +1,139 @@
+from OpenAI_Chat import GPT4O
+from pydantic import BaseModel
+import json
+import multiprocessing
+import os
+from tqdm import tqdm
+import argparse
+
+class ReformattedAnswer(BaseModel):
+    reformatted_answer: str
+
+    def to_json(self):
+        return {
+            "reformatted_answer": self.reformatted_answer
+        }
+
+class Reformat:
+    def __init__(self, raw_data_file, output_file, model_name="gpt-4o", num_processes=None):
+        self.raw_data_file = raw_data_file
+        self.output_file = output_file
+        self.model_name = model_name
+        # If the number of processes is not specified, use the number of CPU cores
+        self.num_processes = num_processes if num_processes is not None else os.cpu_count()
+
+    def get_prompt(self, item):
+        system = """
+    I'm currently creating a VQA dataset related to agriculture. \
+    Each Q&A pair features a title, a user-provided question and image, and an answer from an expert. \
+    The expert's response includes a URL. I will provide the text information from the URL. \
+    You need to combine the content from the URL and the expert's answer to reorganize the expert's \
+    response so that it only contains text and is high-quality, providing a more detailed answer to the user's question. \
+    Please do not output links!
+
+    The title is marked by <Title>, the user's question by <User>, \
+    the expert's response by <Expert>, and the content of the link by <Link i> (indicating the content of the first link).
+
+    Please only output the reformatted answer in English. Please do not output links!"""  
+        
+        title = item["title"]
+        question = item["question"]
+        answer = item["answer"]
+        images = item.get("attachments", [])
+        scraped_urls = item.get("scraped_urls", [])
+        content = ""
+        for id, url in enumerate(scraped_urls, start=1):
+            link_content = url['scraped_content']
+            content += f"<Link {id}>" + '\n' + link_content + '\n' + f"</Link {id}>" + '\n'
+        
+        user = f"<Title>{title}</Title>\n<User>{question}</User>\n<Expert>{answer}</Expert>\n{content}"
+        
+        return {"system": system, "user": user, "images": images}
+
+    # Function to handle item processing
+    def process_item(self, args):
+        item, model_name, output_file, lock = args
+        prompt = self.get_prompt(item)
+        client = GPT4O(model_name=model_name, messages=[{"role": "system", "content": prompt["system"]}])
+      
+        try:
+            response = client.chat(prompt=prompt["user"], images=prompt["images"], response_format=ReformattedAnswer)
+            item["reformatted_answer"] = response.reformatted_answer
+            
+        except Exception as e:
+            # Handle errors gracefully and log them
+            print(f"Error processing item {item.get('id', 'unknown')}: {e}")
+            item["reformatted_answer"] = -1
+            
+        # Lock the file access to avoid race conditions
+        with lock:
+            with open(output_file, 'a', encoding='utf-8') as f:
+                # Each item is written as a single JSON line
+                f.write(json.dumps(item, ensure_ascii=False) + '\n')
+        
+        return item.get('id')
+
+    def reformat(self):
+        # Read the raw data file
+        with open(self.raw_data_file, "r", encoding='utf-8') as f:
+            data = json.load(f)
+
+        # Check if the output file exists and read processed items
+        processed_ids = set()
+        if os.path.exists(self.output_file):
+            with open(self.output_file, "r", encoding='utf-8') as f:
+                for line in f:
+                    try:
+                        item = json.loads(line)
+                        if 'reformatted_answer' in item and item['reformatted_answer'] != -1:
+                            processed_ids.add(item['id'])
+                    except json.JSONDecodeError:
+                        # Handle potentially corrupt JSON lines
+                        continue
+                    
+        items_to_process = [item for item in data if item.get('id') not in processed_ids]
+        print(f"Processing {len(items_to_process)} items.")
+        
+        if items_to_process:
+            manager = multiprocessing.Manager()
+            lock = manager.Lock()
+            # Initialize the process pool with the specified number of processes
+            pool = multiprocessing.Pool(processes=self.num_processes)
+            args_list = [(item, self.model_name, self.output_file, lock) for item in items_to_process]
+            # Use tqdm to show progress
+            for _ in tqdm(pool.imap_unordered(self.process_item, args_list), total=len(args_list), desc="Processing items"):
+                pass
+            pool.close()
+            pool.join()
+        
+        print("Processing completed.")
+        self.cleanup_output(len(data))
+
+    def cleanup_output(self, data_length):
+        valid_items = []
+        
+        with open(self.output_file, "r", encoding='utf-8') as f:
+            for line in f:
+                try:
+                    item = json.loads(line)
+                    if 'reformatted_answer' in item and item['reformatted_answer'] != -1:
+                        valid_items.append(item)
+                except json.JSONDecodeError:
+                    continue
+
+        with open(self.output_file, "w", encoding='utf-8') as f:
+            for item in valid_items:
+                f.write(json.dumps(item, ensure_ascii=False) + '\n')
+
+        print(f"Total successful items: {len(valid_items)}. \n Remaining items to process: {data_length - len(valid_items)}.")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Reformat responses using LLMs model.")
+    parser.add_argument("--input_file", type=str, required=True, help="Path to the input JSON file.")
+    parser.add_argument("--output_file", type=str, required=True, help="Path to the output JSONL file.")
+    parser.add_argument("--model_name", type=str, default="gpt-4o", help="Model name to use.")
+    parser.add_argument("--num_processes", type=int, default=os.cpu_count(), help="Number of processes to use.")
+    args = parser.parse_args()
+
+    reformatter = Reformat(raw_data_file=args.input_file, output_file=args.output_file, model_name=args.model_name, num_processes=args.num_processes)
+    reformatter.reformat()
