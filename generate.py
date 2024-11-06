@@ -6,6 +6,7 @@ import multiprocessing
 import os
 from tqdm import tqdm
 import argparse
+from UIUC_Chat import UIUC_Chat
 
 class Generate:
     def __init__(self, raw_data_file, output_file, model_name="gpt-4o", openai_api_base="", num_processes=None):
@@ -32,9 +33,10 @@ class Generate:
         prompt = self.get_prompt(item)
         if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
             client = GPT4O(model_name=model_name, messages=[])
+        elif self.model_name == "gpt-4o-uiuc":
+            client = UIUC_Chat(model_name="gpt-4o", messages=[])
         else:
             client = Client(model_name=self.offline_model, openai_api_base=self.openai_api_base, messages=[])
-        
         try:
             response = client.chat(prompt=prompt["user"], images=prompt["images"])
             item[model_name] = response
