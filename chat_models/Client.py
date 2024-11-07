@@ -14,17 +14,20 @@ class Client:
         )
         self.model_name = model_name
         self.messages = messages
+        self.history = []
     
     def chat(self, prompt, images=[], response_format=None):
         # Images
         if images == []:
             self.messages.append({"role": "user", "content": prompt})
+            self.history.append({"role": "user", "content": prompt})
         else:
             content = [{"type": "text", "text": prompt}]
             for image in images:
                 base64_image = encode_image(image)
                 content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}})
             self.messages.append({"role": "user", "content": content})
+            self.history.append({"role": "user", "content": prompt})
     
         if response_format is None:
             completion = self.client.chat.completions.create(
@@ -33,6 +36,7 @@ class Client:
             )
             response = completion.choices[0].message.content
             self.messages.append({"role": "assistant", "content": response})
+            self.history.append({"role": "assistant", "content": response})
         else:
             # JSON format
             completion = self.client.beta.chat.completions.parse(                
@@ -42,7 +46,8 @@ class Client:
             )
             response = completion.choices[0].message.parsed
             self.messages.append({"role": "assistant", "content": str(response.to_json())})
+            self.history.append({"role": "assistant", "content": str(response.to_json())})
         return response
     
     def history(self):
-        return self.messages
+        return self.history

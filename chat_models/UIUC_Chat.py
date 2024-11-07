@@ -20,6 +20,7 @@ class UIUC_Chat:
         self.course_name = "cropwizard-1.5"
         self.messages = messages
         self.retrieval_only = retrieval_only
+        self.history = []
 
     def chat(self, prompt, images=[], temperature=0.1, stream=True):
 
@@ -29,6 +30,7 @@ class UIUC_Chat:
 
         if images == []:
             self.messages.append({"role": "user", "content": prompt})
+            self.history.append({"role": "user", "content": prompt})
         else:
             content = []
             # Add images to the content if any
@@ -52,6 +54,10 @@ class UIUC_Chat:
                 "role": "user",
                 "content": content
             })
+            self.history.append({
+                "role": "user",
+                "content": prompt
+            })
 
         payload = {
             "model": self.model_name,
@@ -74,6 +80,10 @@ class UIUC_Chat:
                 "role": "assistant",
                 "content": reply
             })
+            self.history.append({
+                "role": "assistant",
+                "content": reply
+            })
             return reply
         else:
             # Handle errors
@@ -81,4 +91,4 @@ class UIUC_Chat:
             return None
 
     def history(self):
-        return self.messages
+        return self.history

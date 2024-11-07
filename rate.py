@@ -1,4 +1,4 @@
-from OpenAI_Chat import GPT4O
+from chat_models.OpenAI_Chat import GPT4O
 from pydantic import BaseModel
 import json
 import multiprocessing

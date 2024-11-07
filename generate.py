@@ -1,12 +1,12 @@
-from OpenAI_Chat import GPT4O
-from Client import Client
+from chat_models.OpenAI_Chat import GPT4O
+from chat_models.Client import Client
 from pydantic import BaseModel
 import json
 import multiprocessing
 import os
 from tqdm import tqdm
 import argparse
-from UIUC_Chat import UIUC_Chat
+from chat_models.UIUC_Chat import UIUC_Chat
 
 class Generate:
     def __init__(self, raw_data_file, output_file, model_name="gpt-4o", openai_api_base="", num_processes=None):
