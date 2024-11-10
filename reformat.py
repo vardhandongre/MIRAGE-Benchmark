@@ -1,4 +1,5 @@
 from chat_models.OpenAI_Chat import GPT4O
+from chat_models.Gemini import Gemini
 from pydantic import BaseModel
 import json
 import multiprocessing
@@ -19,6 +20,7 @@ class Reformat:
         self.raw_data_file = raw_data_file
         self.output_file = output_file
         self.model_name = model_name
+        self.output_name = model_name + "-ra"
         # If the number of processes is not specified, use the number of CPU cores
         self.num_processes = num_processes if num_processes is not None else os.cpu_count()
 
@@ -34,7 +36,11 @@ class Reformat:
     The title is marked by <Title>, the user's question by <User>, \
     the expert's response by <Expert>, and the content of the link by <Link i> (indicating the content of the first link).
 
-    Please only output the reformatted answer in English. Please do not output links!"""  
+    Please only output the reformatted answer in English. Please do not output links! You should output JSON with the key reformatted_answer. The eample is shown below:
+    {
+        "reformatted_answer ": ...
+    }
+    """
         
         title = item["title"]
         question = item["question"]
@@ -54,16 +60,26 @@ class Reformat:
     def process_item(self, args):
         item, model_name, output_file, lock = args
         prompt = self.get_prompt(item)
-        client = GPT4O(model_name=model_name, messages=[{"role": "system", "content": prompt["system"]}])
+        if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
+            client = GPT4O(model_name=model_name, messages=[{"role": "system", "content": prompt["system"]}])
+        elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash":
+            client = Gemini(model_name=model_name, messages=[prompt["system"]])
+        else:
+            raise ValueError(f"Model '{self.model_name}' not supported.")
       
         try:
             response = client.chat(prompt=prompt["user"], images=prompt["images"], response_format=ReformattedAnswer)
-            item["reformatted_answer"] = response.reformatted_answer
-            
+            if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
+                item[self.output_name] = response.reformatted_answer
+            elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash":
+                response = json.loads(response)
+                item[self.output_name] = response["reformatted_answer"]
+            item["info"] = client.info()
+            item["history"] = client.history
         except Exception as e:
             # Handle errors gracefully and log them
             print(f"Error processing item {item.get('id', 'unknown')}: {e}")
-            item["reformatted_answer"] = -1
+            item[self.output_name] = -1
             
         # Lock the file access to avoid race conditions
         with lock:
@@ -85,7 +101,7 @@ class Reformat:
                 for line in f:
                     try:
                         item = json.loads(line)
-                        if 'reformatted_answer' in item and item['reformatted_answer'] != -1:
+                        if self.output_name in item and item[self.output_name] != -1 and item[self.output_name] != None:
                             processed_ids.add(item['id'])
                     except json.JSONDecodeError:
                         # Handle potentially corrupt JSON lines
@@ -116,7 +132,7 @@ class Reformat:
             for line in f:
                 try:
                     item = json.loads(line)
-                    if 'reformatted_answer' in item and item['reformatted_answer'] != -1:
+                    if self.output_name in item and item[self.output_name] != -1 and item[self.output_name] != None:
                         valid_items.append(item)
                 except json.JSONDecodeError:
                     continue

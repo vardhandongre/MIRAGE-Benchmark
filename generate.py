@@ -1,12 +1,13 @@
 from chat_models.OpenAI_Chat import GPT4O
 from chat_models.Client import Client
+from chat_models.UIUC_Chat import UIUC_Chat
+from chat_models.Gemini import Gemini
 from pydantic import BaseModel
 import json
 import multiprocessing
 import os
 from tqdm import tqdm
 import argparse
-from chat_models.UIUC_Chat import UIUC_Chat
 
 class Generate:
     def __init__(self, raw_data_file, output_file, model_name="gpt-4o", openai_api_base="", num_processes=None):
@@ -35,11 +36,15 @@ class Generate:
             client = GPT4O(model_name=model_name, messages=[])
         elif self.model_name == "gpt-4o-uiuc":
             client = UIUC_Chat(model_name="gpt-4o", messages=[])
+        elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash":
+            client = Gemini(model_name=model_name, messages=[])
         else:
             client = Client(model_name=self.offline_model, openai_api_base=self.openai_api_base, messages=[])
         try:
             response = client.chat(prompt=prompt["user"], images=prompt["images"])
             item[model_name] = response
+            item["info"] = client.info()
+            item["history"] = client.history
             
         except Exception as e:
             # Handle errors gracefully and log them
@@ -66,7 +71,7 @@ class Generate:
                 for line in f:
                     try:
                         item = json.loads(line)
-                        if self.model_name in item and item[self.model_name] != -1:
+                        if self.model_name in item and item[self.model_name] != -1 and item[self.model_name] != None:
                             processed_ids.add(item['id'])
                     except json.JSONDecodeError:
                         # Handle potentially corrupt JSON lines
@@ -97,7 +102,7 @@ class Generate:
             for line in f:
                 try:
                     item = json.loads(line)
-                    if self.model_name in item and item[self.model_name] != -1:
+                    if self.model_name in item and item[self.model_name] != -1 and item[self.model_name] != None:
                         valid_items.append(item)
                 except json.JSONDecodeError:
                     continue

@@ -1,4 +1,5 @@
 from chat_models.OpenAI_Chat import GPT4O
+from chat_models.Gemini import Gemini
 from pydantic import BaseModel
 import json
 import multiprocessing
@@ -33,9 +34,25 @@ class Scorer:
     def get_prompt(self, item):
         title = item["title"]
         user_query = item["question"]
-        expert_answer = item[self.expert_name]
+        if self.expert_name not in item:
+            if self.expert_name in item["b_type"]:
+                expert_answer = item["b_type"][self.expert_name]
+            else:
+                raise ValueError(f"Expert answer not found in item {item.get('id', 'unknown')}")
+        else:
+            expert_answer = item[self.expert_name]
         images = item.get("attachments", [])
-        model_response = item[self.subject_name]
+        if self.subject_name not in item:
+            if self.subject_name in item["a_type"]:
+                model_response = item["a_type"][self.subject_name]
+            elif self.subject_name in item["b_type"]:
+                model_response = item["b_type"][self.subject_name]
+            else:
+                raise ValueError(f"Model response not found in item {item.get('id', 'unknown')}")
+        else:
+            model_response = item[self.subject_name]
+                
+        
         score_criteria = """\
 **1. Accuracy (1-5 points)**
 
@@ -76,35 +93,58 @@ and the user's question, you need to score the model's answer according to the f
 
 <Score Criteria>{score_criteria}</Score Criteria>
 
-Please only output the scores without any other content."""  
+Please only output the scores without any other content. You should output JSON with three key,accuracy,relevance,completeness. The example is shown below:
+{{ "accuracy": ..., "relevance": ..., "completeness": ... }}"""  
         
-        return {"prompt": prompt, "images": images}
+        return {"prompt": prompt, "images": images, "expert_answer": expert_answer, "model_response": model_response}
 
     # Function to handle item processing
     def process_item(self, args):
         item, model_name, output_file, lock = args
         prompt = self.get_prompt(item)
-        client = GPT4O(model_name=model_name, messages=[])
+        if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
+            client = GPT4O(model_name=model_name, messages=[])
+        elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash":
+            client = Gemini(model_name=model_name, messages=[])
+        else:
+            raise ValueError(f"Model '{self.model_name}' not supported.")
         
         new_item = {
+            "jugde": self.model_name,
             "id": item.get('id'),
             "title": item.get('title'),
             "question": item.get('question'),
             "attachments": item.get('attachments'),
             "expert_name": self.expert_name,
             "subject_name": self.subject_name,
-            "expert_answer": item.get(self.expert_name),
-            "model_response": item.get(self.subject_name)
+            "expert_answer": prompt["expert_answer"],
+            "model_response": prompt["model_response"]
         }
         
-        try:
-            response = client.chat(prompt=prompt["prompt"], images=prompt["images"], response_format=Score)
-            new_item["score"] = response.to_json()
-        
-        except Exception as e:
-            # Handle errors gracefully and log them
-            print(f"Error processing item {item.get('id', 'unknown')}: {e}")
-            new_item["score"] = -1
+        max_retries = 5
+        retries = 0
+        while retries < max_retries:
+            try:
+                if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
+                    response = client.chat(prompt=prompt["prompt"], images=prompt["images"], response_format=Score)
+                    new_item["score"] = response.to_json()
+                    response = response.to_json()
+                elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash":
+                    response = client.chat(prompt=prompt["prompt"], images=prompt["images"])
+                    print(f"Response: {response}")
+                    response = json.loads(response)
+                    new_item["score"] = response
+                assert "accuracy" in response and "relevance" in response and "completeness" in response
+                new_item["info"] = client.info()
+                new_item["history"] = client.history
+                break
+            except Exception as e:
+                # Handle errors gracefully and log them
+                print(f"Error: {e}")
+                print(f"Error processing item {item.get('id', 'unknown')}")
+                retries += 1
+                print(f"Retrying... ({retries}/{max_retries})")
+                new_item["score"] = -1
             
         # Lock the file access to avoid race conditions
         with lock:
@@ -126,7 +166,7 @@ Please only output the scores without any other content."""
                 for line in f:
                     try:
                         item = json.loads(line)
-                        if 'score' in item and item['score'] != -1:
+                        if 'score' in item and item['score'] != -1 and item['score'] != None:
                             processed_ids.add(item['id'])
                     except json.JSONDecodeError:
                         # Handle potentially corrupt JSON lines
@@ -157,7 +197,7 @@ Please only output the scores without any other content."""
             for line in f:
                 try:
                     item = json.loads(line)
-                    if 'score' in item and item['score'] != -1:
+                    if 'score' in item and item['score'] != -1 and item['score'] != None:
                         valid_items.append(item)
                 except json.JSONDecodeError:
                     continue
