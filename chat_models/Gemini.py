@@ -30,6 +30,7 @@ class Gemini:
 
     def chat(self, prompt, images=[], response_format=None):
         # Prepare message with images
+        # FIXME: Message format is based on the OPENAI API, and may need to be adjusted for the GEMINI API
         message = copy.deepcopy(self.messages)
         for image_path in images:
             image = Image.open(image_path)
@@ -66,7 +67,7 @@ class Gemini:
             except Exception as e:
                 print(f"Error: {e}")
                 print("API limit reached. Waiting for 65 seconds before retrying...")
-                time.sleep(65)
+                time.sleep(1)
                 attempts += 1      
 
     def info(self):

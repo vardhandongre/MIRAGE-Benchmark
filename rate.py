@@ -6,6 +6,7 @@ import multiprocessing
 import os
 from tqdm import tqdm
 import argparse
+import re
 
 class Score(BaseModel):
     accuracy: int
@@ -102,28 +103,28 @@ Please only output the scores without any other content. You should output JSON 
     def process_item(self, args):
         item, model_name, output_file, lock = args
         prompt = self.get_prompt(item)
-        if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
-            client = GPT4O(model_name=model_name, messages=[])
-        elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash":
-            client = Gemini(model_name=model_name, messages=[])
-        else:
-            raise ValueError(f"Model '{self.model_name}' not supported.")
-        
-        new_item = {
-            "jugde": self.model_name,
-            "id": item.get('id'),
-            "title": item.get('title'),
-            "question": item.get('question'),
-            "attachments": item.get('attachments'),
-            "expert_name": self.expert_name,
-            "subject_name": self.subject_name,
-            "expert_answer": prompt["expert_answer"],
-            "model_response": prompt["model_response"]
-        }
-        
         max_retries = 5
         retries = 0
         while retries < max_retries:
+            if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
+                client = GPT4O(model_name=model_name, messages=[])
+            elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash":
+                client = Gemini(model_name=model_name, messages=[])
+            else:
+                raise ValueError(f"Model '{self.model_name}' not supported.")
+            
+            new_item = {
+                "jugde": self.model_name,
+                "id": item.get('id'),
+                "title": item.get('title'),
+                "question": item.get('question'),
+                "attachments": item.get('attachments'),
+                "expert_name": self.expert_name,
+                "subject_name": self.subject_name,
+                "expert_answer": prompt["expert_answer"],
+                "model_response": prompt["model_response"]
+            }
+            
             try:
                 if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
                     response = client.chat(prompt=prompt["prompt"], images=prompt["images"], response_format=Score)
@@ -131,8 +132,7 @@ Please only output the scores without any other content. You should output JSON 
                     response = response.to_json()
                 elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash":
                     response = client.chat(prompt=prompt["prompt"], images=prompt["images"])
-                    print(f"Response: {response}")
-                    response = json.loads(response)
+                    response = self.extract_json(response)
                     new_item["score"] = response
                 assert "accuracy" in response and "relevance" in response and "completeness" in response
                 new_item["info"] = client.info()
@@ -145,7 +145,7 @@ Please only output the scores without any other content. You should output JSON 
                 retries += 1
                 print(f"Retrying... ({retries}/{max_retries})")
                 new_item["score"] = -1
-            
+                
         # Lock the file access to avoid race conditions
         with lock:
             with open(output_file, 'a', encoding='utf-8') as f:
@@ -153,6 +153,18 @@ Please only output the scores without any other content. You should output JSON 
                 f.write(json.dumps(new_item, ensure_ascii=False) + '\n')
         
         return new_item.get('id')
+
+    def extract_json(self, string):
+        pattern = r'```json\s*(\{[\s\S]*?\})\s*```'
+        match = re.search(pattern, string)
+
+        if match:
+            json_str = match.group(1)
+        else:
+            json_str = string.strip()
+
+        json_data = json.loads(json_str)   
+        return json_data     
 
     def scoring(self):
         # Read the raw data file
