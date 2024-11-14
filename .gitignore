@@ -4,3 +4,7 @@
 __pycache__/*
 *.sh
 SampleShow.py
+*.jsonl
+dataset/qa_images/*
+*.log
+dataset/figures
