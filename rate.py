@@ -1,5 +1,6 @@
 from chat_models.OpenAI_Chat import GPT4O
 from chat_models.Gemini import Gemini
+from chat_models.Claude import Claude  # Add Claude import
 from pydantic import BaseModel
 import json
 import multiprocessing
@@ -25,12 +26,9 @@ class Scorer:
         self.raw_data_file = raw_data_file
         self.output_file = output_file
         self.model_name = model_name
-        # If the number of processes is not specified, use the number of CPU cores
         self.num_processes = num_processes if num_processes is not None else os.cpu_count()
-        
         self.expert_name = expert_name
         self.subject_name = subject_name
-        
 
     def get_prompt(self, item):
         title = item["title"]
@@ -52,8 +50,7 @@ class Scorer:
                 raise ValueError(f"Model response not found in item {item.get('id', 'unknown')}")
         else:
             model_response = item[self.subject_name]
-                
-        
+
         score_criteria = """\
 **1. Accuracy (1-5 points)**
 
@@ -81,7 +78,7 @@ class Scorer:
 """
         prompt = f"""
 You are now required to rate a model's response to an agriculture-related question. \
-We have a perfect answer, and based on this perfect answer, the user-provided image, \
+We have a perfect answer, which is Expert's Answer and based on this perfect answer, the user-provided image, \
 and the user's question, you need to score the model's answer according to the following three scoring criteria.
 
 <Title>{title}</Title>
@@ -95,11 +92,18 @@ and the user's question, you need to score the model's answer according to the f
 <Score Criteria>{score_criteria}</Score Criteria>
 
 Please only output the scores without any other content. You should output JSON with three key,accuracy,relevance,completeness. The example is shown below:
-{{ "accuracy": ..., "relevance": ..., "completeness": ... }}"""  
-        
-        return {"prompt": prompt, "images": images, "expert_answer": expert_answer, "model_response": model_response}
+{{ "accuracy": ..., "relevance": ..., "completeness": ... }}"""
 
-    # Function to handle item processing
+        system_prompt = "You are a helpful assistant that evaluates and scores responses in agricultural contexts."
+        
+        return {
+            "prompt": prompt,
+            "system": system_prompt,
+            "images": images,
+            "expert_answer": expert_answer,
+            "model_response": model_response
+        }
+
     def process_item(self, args):
         item, model_name, output_file, lock = args
         prompt = self.get_prompt(item)
@@ -110,6 +114,8 @@ Please only output the scores without any other content. You should output JSON 
                 client = GPT4O(model_name=model_name, messages=[])
             elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash":
                 client = Gemini(model_name=model_name, messages=[])
+            elif self.model_name == "claude-3-5-sonnet-latest":
+                client = Claude(model_name=model_name, messages=[])
             else:
                 raise ValueError(f"Model '{self.model_name}' not supported.")
             
@@ -134,37 +140,49 @@ Please only output the scores without any other content. You should output JSON 
                     response = client.chat(prompt=prompt["prompt"], images=prompt["images"])
                     response = self.extract_json(response)
                     new_item["score"] = response
+                elif self.model_name == "claude-3-5-sonnet-latest":
+                    client.system = prompt["system"] + "\nOutput only valid JSON with exactly this format: {\"accuracy\": score, \"relevance\": score, \"completeness\": score}"
+                    response = client.chat(prompt=prompt["prompt"], images=prompt["images"])
+                    response = self.extract_json(response)
+                    new_item["score"] = response
+                
                 assert "accuracy" in response and "relevance" in response and "completeness" in response
                 new_item["info"] = client.info()
                 new_item["history"] = client.history
                 break
             except Exception as e:
-                # Handle errors gracefully and log them
                 print(f"Error: {e}")
                 print(f"Error processing item {item.get('id', 'unknown')}")
                 retries += 1
                 print(f"Retrying... ({retries}/{max_retries})")
                 new_item["score"] = -1
                 
-        # Lock the file access to avoid race conditions
         with lock:
             with open(output_file, 'a', encoding='utf-8') as f:
-                # Each item is written as a single JSON line
                 f.write(json.dumps(new_item, ensure_ascii=False) + '\n')
         
         return new_item.get('id')
 
     def extract_json(self, string):
+        if isinstance(string, dict):
+            return string
+        
         pattern = r'```json\s*(\{[\s\S]*?\})\s*```'
         match = re.search(pattern, string)
 
         if match:
             json_str = match.group(1)
         else:
-            json_str = string.strip()
+            # Look for JSON object in the string
+            start = string.find('{')
+            end = string.rfind('}') + 1
+            if start >= 0 and end > start:
+                json_str = string[start:end]
+            else:
+                json_str = string.strip()
 
         json_data = json.loads(json_str)   
-        return json_data     
+        return json_data   
 
     def scoring(self):
         # Read the raw data file
@@ -221,7 +239,7 @@ Please only output the scores without any other content. You should output JSON 
         print(f"Total successful items: {len(valid_items)}. \n Remaining items to process: {data_length - len(valid_items)}.")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Reformat responses using LLMs model.")
+    parser = argparse.ArgumentParser(description="Score responses using LLMs model.")
     parser.add_argument("--input_file", type=str, required=True, help="Path to the input JSON file.")
     parser.add_argument("--output_file", type=str, required=True, help="Path to the output JSONL file.")
     parser.add_argument("--model_name", type=str, default="gpt-4o", help="Model name to use.")

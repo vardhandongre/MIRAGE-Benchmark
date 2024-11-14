@@ -1,5 +1,6 @@
 from chat_models.OpenAI_Chat import GPT4O
 from chat_models.Gemini import Gemini
+from chat_models.Claude import Claude
 from pydantic import BaseModel
 import json
 import multiprocessing
@@ -60,10 +61,15 @@ class Reformat:
     def process_item(self, args):
         item, model_name, output_file, lock = args
         prompt = self.get_prompt(item)
+
         if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
             client = GPT4O(model_name=model_name, messages=[{"role": "system", "content": prompt["system"]}])
         elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash":
             client = Gemini(model_name=model_name, messages=[prompt["system"]])
+        elif self.model_name == "claude-3-5-sonnet-latest":
+            system_prompt = prompt["system"] + "\nVery important: Your response must be a valid JSON string with exactly this format: {\"reformatted_answer\": \"your detailed answer here\"}"
+            client = Claude(model_name=model_name, messages=[])
+            client.system = system_prompt
         else:
             raise ValueError(f"Model '{self.model_name}' not supported.")
       
@@ -72,6 +78,9 @@ class Reformat:
             if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
                 item[self.output_name] = response.reformatted_answer
             elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash":
+                response = json.loads(response)
+                item[self.output_name] = response["reformatted_answer"]
+            elif self.model_name == "claude-3-5-sonnet-latest":
                 response = json.loads(response)
                 item[self.output_name] = response["reformatted_answer"]
             item["info"] = client.info()
