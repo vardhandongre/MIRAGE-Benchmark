@@ -141,7 +141,8 @@ class QAScraper:
             pool = Pool(processes=self.num_workers)
             while self.current_page <= self.max_pages:
                 batch_end_page = min(self.current_page + self.pages_per_batch - 1, self.max_pages)
-                print(f"\nScraping pages {self.current_page} to {batch_end_page}, out of {self.max_pages} total pages")
+                # Report progress and current time
+                print(f"\nScraping pages {self.current_page} to {batch_end_page}, out of {self.max_pages} total pages Currently at time {time.strftime('%H:%M:%S')}")
                 all_qa_links = []
                 for page in range(self.current_page, batch_end_page + 1):
                     qa_links = self.scrape_qa_list_page(page)
