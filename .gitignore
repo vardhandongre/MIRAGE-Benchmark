@@ -8,3 +8,6 @@ SampleShow.py
 dataset/qa_images/*
 *.log
 dataset/figures
+*.png
+*.pyc
+*.sbatch
