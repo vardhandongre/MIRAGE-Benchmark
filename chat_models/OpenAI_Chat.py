@@ -1,5 +1,6 @@
 from openai import OpenAI
 import base64
+import copy
 
 # Function to encode the image
 def encode_image(image_path):
@@ -11,7 +12,7 @@ class GPT4O():
         self.client = OpenAI()
         self.model_name = model_name
         self.messages = messages
-        self.history = []
+        self.history_info = copy.deepcopy(messages)
         # Define pricing per model
         self.pricing = {
             "gpt-4o": {
@@ -34,14 +35,14 @@ class GPT4O():
         # Images
         if images == []:
             self.messages.append({"role": "user", "content": prompt})
-            self.history.append({"role": "user", "content": prompt})
+            self.history_info.append({"role": "user", "content": prompt})
         else:
             content = [{"type": "text", "text": prompt}]
             for image in images:
                 base64_image = encode_image(image)
                 content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}})
             self.messages.append({"role": "user", "content": content})
-            self.history.append({"role": "user", "content": prompt})
+            self.history_info.append({"role": "user", "content": prompt})
     
         if response_format is None:
             completion = self.client.chat.completions.create(
@@ -50,7 +51,7 @@ class GPT4O():
             )
             response = completion.choices[0].message.content
             self.messages.append({"role": "assistant", "content": response})
-            self.history.append({"role": "assistant", "content": response})
+            self.history_info.append({"role": "assistant", "content": response})
         else:
             # JSON format
             completion = self.client.beta.chat.completions.parse(                
@@ -60,7 +61,7 @@ class GPT4O():
             )
             response = completion.choices[0].message.parsed
             self.messages.append({"role": "assistant", "content": str(response.to_json())})
-            self.history.append({"role": "assistant", "content": str(response.to_json())})
+            self.history_info.append({"role": "assistant", "content": str(response.to_json())})
             
         self.prompt_tokens = completion.usage.prompt_tokens
         self.completion_tokens = completion.usage.completion_tokens
@@ -80,5 +81,5 @@ class GPT4O():
         info = {"model": self.model_name, "cost": total_cost, "input_tokens": self.prompt_tokens, "output_tokens": self.completion_tokens} 
         return info    
     
-    def history(self):
-        return self.history
+    def get_history(self):
+        return self.history_info

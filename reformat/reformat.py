@@ -1,3 +1,5 @@
+import sys
+sys.path.append('../')
 from chat_models.OpenAI_Chat import GPT4O
 from chat_models.Gemini import Gemini
 from chat_models.Claude import Claude
@@ -47,11 +49,17 @@ class Reformat:
         question = item["question"]
         answer = item["answer"]
         images = item.get("attachments", [])
-        scraped_urls = item.get("scraped_urls", [])
+        urls = item.get("urls", [])
         content = ""
-        for id, url in enumerate(scraped_urls, start=1):
-            link_content = url['scraped_content']
-            content += f"<Link {id}>" + '\n' + link_content + '\n' + f"</Link {id}>" + '\n'
+        url_contents = {}
+        for url in urls:
+            url_id = url['url_id'].split('_')[-1]
+            url_title = url['title']
+            url_content = url['content']
+            url_contents[url_id] = f"Title: {url_title}\n\nContent:{url_content}"
+
+        for i in range(1, len(urls)+1):
+            content += f"<Link {i}>" + '\n' + url_contents[str(i)] + '\n' + f"</Link {i}>" + '\n'
         
         user = f"<Title>{title}</Title>\n<User>{question}</User>\n<Expert>{answer}</Expert>\n{content}"
         
@@ -84,7 +92,7 @@ class Reformat:
                 response = json.loads(response)
                 item[self.output_name] = response["reformatted_answer"]
             item["info"] = client.info()
-            item["history"] = client.history
+            item["history"] = client.get_history()
         except Exception as e:
             # Handle errors gracefully and log them
             print(f"Error processing item {item.get('id', 'unknown')}: {e}")

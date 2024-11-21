@@ -40,7 +40,7 @@ async def main() -> None:
 
         context.log.info(f"Processed {url}")
     
-    input_file_path = "/home/chigui2/workspace/AgrVQA/dataset/raw_data/urls_dataset.json"
+    input_file_path = "/home/chigui2/workspace/AgrVQA/dataset/pre_data/url_inputs.json"
     with open(input_file_path, 'r', encoding='utf-8') as f:
         input_data = json.load(f)
     requests = []

@@ -11,3 +11,4 @@ dataset/figures
 *.png
 *.pyc
 *.sbatch
+*logs/*

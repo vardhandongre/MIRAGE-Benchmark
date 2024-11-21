@@ -1,3 +1,5 @@
+import sys
+sys.path.append('../')
 from chat_models.OpenAI_Chat import GPT4O
 from chat_models.Gemini import Gemini
 from chat_models.Claude import Claude  # Add Claude import
@@ -148,7 +150,7 @@ Please only output the scores without any other content. You should output JSON 
                 
                 assert "accuracy" in response and "relevance" in response and "completeness" in response
                 new_item["info"] = client.info()
-                new_item["history"] = client.history
+                new_item["history"] = client.get_history()
                 break
             except Exception as e:
                 print(f"Error: {e}")

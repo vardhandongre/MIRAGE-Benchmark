@@ -12,7 +12,7 @@ class Gemini:
         self.model = genai.GenerativeModel(model_name=model_name)
         self.model_name = model_name
         self.messages = messages
-        self.history = copy.deepcopy(messages)
+        self.history_info = copy.deepcopy(messages)
         self.max_retries = 5
         # Define pricing per model
         self.pricing = {
@@ -38,7 +38,7 @@ class Gemini:
         
         message.append(prompt)
         self.messages.append({"role": "user", "content": message})
-        self.history.append({"role": "user", "content": prompt})
+        self.history_info.append({"role": "user", "content": prompt})
         # Retry mechanism
         attempts = 0
         while attempts <= self.max_retries:
@@ -61,7 +61,7 @@ class Gemini:
                 self.completion_tokens = response.usage_metadata.candidates_token_count
 
                 self.messages.append({"role": "assistant", "content": text_response})
-                self.history.append({"role": "assistant", "content": text_response})
+                self.history_info.append({"role": "assistant", "content": text_response})
 
                 return text_response
             except Exception as e:
@@ -85,4 +85,4 @@ class Gemini:
         return info
 
     def get_history(self):
-        return self.history
+        return self.history_info
