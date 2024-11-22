@@ -268,7 +268,7 @@ def main():
     parser.add_argument('--qa_output_file_path', type=str, default='dataset/raw_data/qa_data_missing.jsonl', help='Path to save QA data')
     parser.add_argument('--qa_images_folder', type=str, default='dataset/qa_images', help='Folder to save attachments')
     parser.add_argument('--num_workers', type=int, default=4, help='Number of worker processes')
-    parser.add_argument('--find_missing', default=True, action='store_true', help='Enable scraping of specified missing pages')
+    parser.add_argument('--find_missing', default=False, action='store_true', help='Enable scraping of specified missing pages')
     parser.add_argument('--missing_pages_file', default="/home/chigui2/workspace/AgrVQA/logs/page_numbers.txt" , type=str, help='File containing list of missing page numbers')
 
     args = parser.parse_args()

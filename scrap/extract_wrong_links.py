@@ -22,7 +22,7 @@ class ExtractWrongLinks:
         self.num_processes = num_processes if num_processes is not None else os.cpu_count()
 
     def get_prompt(self, item):        
-        prompt = item["responses"][0]["response"] + "\n\nPlesae extract all the urls in the above text. Output the urls in a list. Use JSON format."     
+        prompt = item["responses"][0]["response"] + "\n\nPlesae extract all the urls in the above text. Notice that some links do not have spaces in between; please extract them correctly. Output the urls in a list. Use JSON format."     
         return {"prompt": prompt}
 
     # Function to handle item processing
