@@ -12,3 +12,4 @@ dataset/figures
 *.pyc
 *.sbatch
 *logs/*
+*.zip
