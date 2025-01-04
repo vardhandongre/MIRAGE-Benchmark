@@ -1,6 +1,7 @@
 import sys
 sys.path.append('../')
 from chat_models.OpenAI_Chat import GPT4O
+from chat_models.Gemini import Gemini
 import json
 import multiprocessing
 import os
@@ -26,8 +27,12 @@ class ImageDescriptionExtractor:
         item, model_name, output_file, lock = args
         prompt = self.get_prompt(item)
 
-        # Initialize GPT4O client
-        client = GPT4O(model_name=model_name, messages=[])
+        if model_name == "gpt-4o" or model_name == "gpt-4o-mini":
+            # Initialize GPT4O client
+            client = GPT4O(model_name=model_name, messages=[])
+        elif model_name == "gemini-1.5-pro" or model_name == "gemini-1.5-flash":
+            # Initialize Gemini client
+            client = Gemini(model_name=model_name, messages=[])
 
         try:
             # Get the response from the model

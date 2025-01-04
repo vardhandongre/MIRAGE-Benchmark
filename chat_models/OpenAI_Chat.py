@@ -1,6 +1,8 @@
 from openai import OpenAI
 import base64
 import copy
+import math
+from PIL import Image
 
 # Function to encode the image
 def encode_image(image_path):
@@ -28,9 +30,10 @@ class GPT4O():
                 "output": 1.50 / 1_000_000,  # $1.50 per 1M tokens
             }
         }
-        self.prompt_tokens = 0
-        self.completion_tokens = 0
-    
+        self.input_text_tokens = 0
+        self.input_image_tokens = 0
+        self.output_text_tokens = 0
+
     def chat(self, prompt, images=[], response_format=None):
         # Images
         if images == []:
@@ -43,6 +46,7 @@ class GPT4O():
                 content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}})
             self.messages.append({"role": "user", "content": content})
             self.history_info.append({"role": "user", "content": prompt})
+            self.input_image_tokens = self.calculate_vision_pricing(images)
     
         if response_format is None:
             completion = self.client.chat.completions.create(
@@ -63,9 +67,51 @@ class GPT4O():
             self.messages.append({"role": "assistant", "content": str(response.to_json())})
             self.history_info.append({"role": "assistant", "content": str(response.to_json())})
             
-        self.prompt_tokens = completion.usage.prompt_tokens
-        self.completion_tokens = completion.usage.completion_tokens
+        self.input_text_tokens = completion.usage.prompt_tokens - self.input_image_tokens
+        self.output_text_tokens = completion.usage.completion_tokens
+        
         return response
+
+    # Calculate the image tokens
+    def calculate_vision_pricing(self, image_paths, detail='high'):
+        all_tokens = 0
+        if len(image_paths) != 0:
+            all_tokens = 85
+        # Get the image dimensions
+        for image_path in image_paths:
+            with Image.open(image_path) as img:
+                width, height = img.size
+                
+            if detail == 'low':
+                return 85
+
+            # Scale down to fit within a 2048 x 2048 square if necessary
+            if width > 2048 or height > 2048:
+                max_size = 2048
+                aspect_ratio = width / height
+                if aspect_ratio > 1:
+                    width = max_size
+                    height = int(max_size / aspect_ratio)
+                else:
+                    height = max_size
+                    width = int(max_size * aspect_ratio)
+
+            # Resize such that the shortest side is 768px if the original dimensions exceed 768px
+            min_size = 768
+            aspect_ratio = width / height
+            if width > min_size and height > min_size:
+                if aspect_ratio > 1:
+                    height = min_size
+                    width = int(min_size * aspect_ratio)
+                else:
+                    width = min_size
+                    height = int(min_size / aspect_ratio)
+
+            tiles_width = math.ceil(width / 512)
+            tiles_height = math.ceil(height / 512)
+            all_tokens += 170 * (tiles_width * tiles_height)
+        
+        return all_tokens
 
     def info(self):
         model_name = self.model_name
@@ -74,11 +120,20 @@ class GPT4O():
         if not model_pricing:
             raise ValueError(f"Pricing information for model '{model_name}' not found.")
 
-        input_cost = self.prompt_tokens * model_pricing["input"]
-        output_cost = self.completion_tokens * model_pricing["output"]
+        input_cost = (self.input_text_tokens + self.input_image_tokens) * model_pricing["input"]
+        output_cost = (self.output_text_tokens) * model_pricing["output"]
 
         total_cost = input_cost + output_cost
-        info = {"model": self.model_name, "cost": total_cost, "input_tokens": self.prompt_tokens, "output_tokens": self.completion_tokens} 
+        info = {
+            "model": model_name,
+            "input_text_tokens": self.input_text_tokens,
+            "input_image_tokens": self.input_image_tokens,
+            "output_text_tokens": self.output_text_tokens,
+            "input_cost": input_cost,
+            "output_cost": output_cost,
+            "total_cost": total_cost,
+        }
+        
         return info    
     
     def get_history(self):

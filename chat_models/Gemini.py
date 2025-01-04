@@ -25,8 +25,9 @@ class Gemini:
                 "output": 0.30 / 1_000_000,  # $0.30 per 1M output tokens
             }
         }
-        self.prompt_tokens = 0
-        self.completion_tokens = 0
+        self.input_text_tokens = 0
+        self.input_image_tokens = 0
+        self.output_text_tokens = 0
 
     def chat(self, prompt, images=[], response_format=None):
         # Prepare message with images
@@ -37,6 +38,7 @@ class Gemini:
             message.append(image)
         
         message.append(prompt)
+        
         self.messages.append({"role": "user", "content": message})
         self.history_info.append({"role": "user", "content": prompt})
         # Retry mechanism
@@ -57,8 +59,9 @@ class Gemini:
                     response = self.model.generate_content(message)
                     text_response = response.text
                 # Assume response gives usage data for token calculations
-                self.prompt_tokens = response.usage_metadata.prompt_token_count
-                self.completion_tokens = response.usage_metadata.candidates_token_count
+                self.input_image_tokens = len(images) * 258  # 258 tokens per image
+                self.input_text_tokens = response.usage_metadata.prompt_token_count - self.input_image_tokens
+                self.output_text_tokens = response.usage_metadata.candidates_token_count
 
                 self.messages.append({"role": "assistant", "content": text_response})
                 self.history_info.append({"role": "assistant", "content": text_response})
@@ -77,11 +80,19 @@ class Gemini:
         if not model_pricing:
             raise ValueError(f"Pricing information for model '{model_name}' not found.")
 
-        input_cost = self.prompt_tokens * model_pricing["input"]
-        output_cost = self.completion_tokens * model_pricing["output"]
+        input_cost = (self.input_text_tokens + self.input_image_tokens) * model_pricing["input"]
+        output_cost = self.output_text_tokens * model_pricing["output"]
 
         total_cost = input_cost + output_cost
-        info = {"model": self.model_name, "cost": total_cost, "input_tokens": self.prompt_tokens, "output_tokens": self.completion_tokens}
+        info = {
+            "model": model_name,
+            "input_text_tokens": self.input_text_tokens,
+            "input_image_tokens": self.input_image_tokens,
+            "output_text_tokens": self.output_text_tokens,
+            "input_cost": input_cost,
+            "output_cost": output_cost,
+            "total_cost": total_cost,
+        }
         return info
 
     def get_history(self):
