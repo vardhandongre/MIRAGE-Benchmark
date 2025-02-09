@@ -7,7 +7,7 @@ def encode_image(image_path):
     return base64.b64encode(image_file.read()).decode('utf-8')
 
 class Client:
-    def __init__(self, model_name="Qwen2-VL-7B-Instruct", openai_api_key = "token-abc123", openai_api_base = "http://10.20.32.132:8001/v1", messages=[]):
+    def __init__(self, model_name="Qwen2-VL-7B-Instruct", openai_api_key = "token-abc123", openai_api_base = "http://0.0.0.0:8000/v1", messages=[]):
         self.client = OpenAI(
             api_key=openai_api_key,
             base_url=openai_api_base,

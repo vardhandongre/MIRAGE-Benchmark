@@ -24,13 +24,14 @@ class Score(BaseModel):
         }
 
 class Scorer:
-    def __init__(self, raw_data_file, output_file, expert_name, subject_name, model_name="gpt-4o", num_processes=None):
+    def __init__(self, raw_data_file, output_file, expert_name, subject_name, model_name="gpt-4o", num_processes=None, temperature=1):
         self.raw_data_file = raw_data_file
         self.output_file = output_file
         self.model_name = model_name
         self.num_processes = num_processes if num_processes is not None else os.cpu_count()
         self.expert_name = expert_name
         self.subject_name = subject_name
+        self.temperature = temperature
 
     def get_prompt(self, item):
         title = item["title"]
@@ -53,41 +54,72 @@ class Scorer:
         else:
             model_response = item[self.subject_name]
 
-        score_criteria = """\
-**1. Accuracy (1-5 points)**
+        score_criteria = """\**Accuracy Definition**: Whether the agricultural facts, species names, and diagnostic conclusions stated in the answer align with expert responses and scientific consensus. Emphasis is placed on the correctness of professional terminology (e.g., naming of disease types), accuracy of key details (e.g., descriptions of lesion characteristics), and logical coherence of causal relationships (e.g., transmission pathways of pests/diseases). *Example: Correctly identifying "wheat stripe rust" and describing "yellow linear lesions with powdery spore masses" would earn high marks, whereas confusing it with "leaf rust" or misdescribing lesion color would result in deductions.*
 
-- **5 points:** The response perfectly reflects all key information and details in the image, such as the correct crop, pests, etc., and is completely consistent with the perfect answer in terms of accuracy.
-- **4 points:** The response correctly reflects most of the key information and details in the image, with only minor errors.
-- **3 points:** The response is partially correct but omits some important information or contains some errors.
-- **2 points:** The response has many errors and only a small portion of the information is accurate.
-- **1 point:** The response almost entirely does not match the key information and details in the image, with numerous errors.
+**Relevance Definition**: Whether the answer directly addresses the visual content (e.g., plant parts in uploaded images) and core needs of the user (e.g., emergency pest/disease management), while excluding irrelevant content. *Example: For a question about "the cause of tomato leaf curling," extensive discussion of fruit storage methods would be deemed irrelevant.*
 
-**2. Relevance (1-5 points)**
+**Completeness Definition**: Whether the model’s answer covers all key information points mentioned in expert answers—such as disease identification, preventive measures, treatment plans—to fully address the user’s inquiry. If the model omits critical steps or precautions highlighted in expert answers, it is deemed incomplete. *Example: If an expert answer outlines three steps (identifying the disease, applying chemical treatments, and post-treatment management), but the model only discusses disease identification without mentioning treatment, the response lacks completeness.*
 
-- **5 points:** The response is direct and fully addresses the question, effectively solving the problem.
-- **4 points:** The response mainly addresses the question, largely solving the problem but includes some minor irrelevant content.
-- **3 points:** The response is related to the question but does not fully focus on the core of the question, or contains a significant amount of irrelevant information.
-- **2 points:** The response has little relevance to the question, only touching on certain aspects of it.
-- **1 point:** The response is almost entirely unrelated to the question, or does not solve the problem at all.
+**1. Accuracy (0-4 points)**
 
-**3. Completeness (1-5 points)**
+- **4 points:** All agricultural facts, terms, and causal relationships are fully correct and align with expert consensus.
+- **3 points:** Minor errors in terminology or details, but core conclusions remain accurate.
+- **2 points:** Significant factual errors or misidentified species/diseases, but partial correctness.
+- **1 point:** Major inaccuracies, e.g., confusing diseases or flawed causal logic.
+- **0 points:** Entirely incorrect or unscientific claims.
 
-- **5 points:** The response comprehensively covers all the key information needed for the question, with no omissions.
-- **4 points:** The response covers most of the key information, but misses some more minor details.
-- **3 points:** The response covers some of the key information but misses quite a lot.
-- **2 points:** The response omits a large amount of key information, providing only limited information.
-- **1 point:** The response almost does not cover any key information, with extensive omissions.
-"""
+**2. Relevance (0-4 points)**
+
+- **4 points:** Directly addresses the user’s query and image content; no irrelevant content.
+- **3 points:** Mostly relevant but includes minor tangential details.
+- **2 points:** Partially relevant but omits key visual/user-requested elements.
+- **1 point:** Largely off-topic or misinterprets the core query.
+- **0 points:** Entirely unrelated to the user’s question or image.
+
+**3. Completeness (0-4 points)**
+
+- **4 points:** Covers all key points from the gold answer (e.g., diagnosis, treatment, prevention).
+- **3 points:** Misses 1-2 minor details but addresses core aspects.
+- **2 points:** Omits a major component (e.g., treatment steps).
+- **1 point:** Only addresses a single aspect superficially.
+- **0 points:** Fails to address any key elements of the query. """
+
+
+#         score_criteria = """\
+# **1. Accuracy (1-5 points)**
+
+# - **5 points:** The response perfectly reflects all key information and details in the image, such as the correct crop, pests, etc., and is completely consistent with the perfect answer in terms of accuracy.
+# - **4 points:** The response correctly reflects most of the key information and details in the image, with only minor errors.
+# - **3 points:** The response is partially correct but omits some important information or contains some errors.
+# - **2 points:** The response has many errors and only a small portion of the information is accurate.
+# - **1 point:** The response almost entirely does not match the key information and details in the image, with numerous errors.
+
+# **2. Relevance (1-5 points)**
+
+# - **5 points:** The response is direct and fully addresses the question, effectively solving the problem.
+# - **4 points:** The response mainly addresses the question, largely solving the problem but includes some minor irrelevant content.
+# - **3 points:** The response is related to the question but does not fully focus on the core of the question, or contains a significant amount of irrelevant information.
+# - **2 points:** The response has little relevance to the question, only touching on certain aspects of it.
+# - **1 point:** The response is almost entirely unrelated to the question, or does not solve the problem at all.
+
+# **3. Completeness (1-5 points)**
+
+# - **5 points:** The response comprehensively covers all the key information needed for the question, with no omissions.
+# - **4 points:** The response covers most of the key information, but misses some more minor details.
+# - **3 points:** The response covers some of the key information but misses quite a lot.
+# - **2 points:** The response omits a large amount of key information, providing only limited information.
+# - **1 point:** The response almost does not cover any key information, with extensive omissions.
+# """
         prompt = f"""
 You are now required to rate a model's response to an agriculture-related question. \
-We have a perfect answer, which is Expert's Answer and based on this perfect answer, the user-provided image, \
+We have a gold answer, which is Expert's Answer and based on this gold answer, the user-provided image, \
 and the user's question, you need to score the model's answer according to the following three scoring criteria.
 
 <Title>{title}</Title>
 
 <User Query>{user_query}</User Query>
 
-<Expert Answer>{expert_answer}</Expert Answer>
+<Gold Answer>{expert_answer}</Gold Answer>
 
 <Model Response>{model_response}</Model Response>
 
@@ -135,16 +167,16 @@ Please only output the scores without any other content. You should output JSON 
             
             try:
                 if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
-                    response = client.chat(prompt=prompt["prompt"], images=prompt["images"], response_format=Score)
+                    response = client.chat(prompt=prompt["prompt"], images=prompt["images"], response_format=Score, temperature=0)
                     new_item["score"] = response.to_json()
                     response = response.to_json()
                 elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash":
-                    response = client.chat(prompt=prompt["prompt"], images=prompt["images"])
+                    response = client.chat(prompt=prompt["prompt"], images=prompt["images"], temperature=0)
                     response = self.extract_json(response)
                     new_item["score"] = response
                 elif self.model_name == "claude-3-5-sonnet-latest":
                     client.system = prompt["system"] + "\nOutput only valid JSON with exactly this format: {\"accuracy\": score, \"relevance\": score, \"completeness\": score}"
-                    response = client.chat(prompt=prompt["prompt"], images=prompt["images"])
+                    response = client.chat(prompt=prompt["prompt"], images=prompt["images"], temperature=0)
                     response = self.extract_json(response)
                     new_item["score"] = response
                 
@@ -248,7 +280,8 @@ if __name__ == "__main__":
     parser.add_argument("--num_processes", type=int, default=os.cpu_count(), help="Number of processes to use.")
     parser.add_argument("--expert_name", type=str, required=True, help="Name of the expert's answer field.")
     parser.add_argument("--subject_name", type=str, required=True, help="Name of the subject's answer field.")
+    parser.add_argument("--temperature", type=float, default=1.0, help="Temperature for model response generation.")
     
     args = parser.parse_args()
-    scorer = Scorer(args.input_file, args.output_file, args.expert_name, args.subject_name, args.model_name, args.num_processes)
+    scorer = Scorer(args.input_file, args.output_file, args.expert_name, args.subject_name, args.model_name, args.num_processes, args.temperature)
     scorer.scoring()

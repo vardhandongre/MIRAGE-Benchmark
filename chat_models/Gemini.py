@@ -29,7 +29,7 @@ class Gemini:
         self.input_image_tokens = 0
         self.output_text_tokens = 0
 
-    def chat(self, prompt, images=[], response_format=None):
+    def chat(self, prompt, images=[], response_format=None, temperature=1):
         # Prepare message with images
         # FIXME: Message format is based on the OPENAI API, and may need to be adjusted for the GEMINI API
         message = copy.deepcopy(self.messages)
@@ -51,12 +51,13 @@ class Gemini:
                         message,
                         generation_config=genai.GenerationConfig(
                             response_mime_type="application/json",
-                            response_schema=response_format
+                            response_schema=response_format,
+                            temperature=temperature
                         ),
                     )
                     text_response = response.text
                 else:
-                    response = self.model.generate_content(message)
+                    response = self.model.generate_content(message, generation_config=genai.GenerationConfig(temperature=temperature))
                     text_response = response.text
                 # Assume response gives usage data for token calculations
                 self.input_image_tokens = len(images) * 258  # 258 tokens per image

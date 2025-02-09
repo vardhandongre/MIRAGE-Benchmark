@@ -34,7 +34,7 @@ class GPT4O():
         self.input_image_tokens = 0
         self.output_text_tokens = 0
 
-    def chat(self, prompt, images=[], response_format=None):
+    def chat(self, prompt, images=[], response_format=None, temperature=1):
         # Images
         if images == []:
             self.messages.append({"role": "user", "content": prompt})
@@ -51,7 +51,8 @@ class GPT4O():
         if response_format is None:
             completion = self.client.chat.completions.create(
                 model=self.model_name,
-                messages=self.messages
+                messages=self.messages,
+                temperature=temperature
             )
             response = completion.choices[0].message.content
             self.messages.append({"role": "assistant", "content": response})
@@ -61,7 +62,8 @@ class GPT4O():
             completion = self.client.beta.chat.completions.parse(                
                 model=self.model_name,
                 messages=self.messages,
-                response_format=response_format
+                response_format=response_format,
+                temperature=temperature
             )
             response = completion.choices[0].message.parsed
             self.messages.append({"role": "assistant", "content": str(response.to_json())})
