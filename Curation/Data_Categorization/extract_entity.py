@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../')
+sys.path.append('../../')
 from chat_models.OpenAI_Chat import GPT4O
 from pydantic import BaseModel
 import json
