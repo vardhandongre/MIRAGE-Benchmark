@@ -87,7 +87,7 @@ Model Output:
 {"question": "Moved into a new house and the dogwood tree is missing bark on the trunk where it meets the ground. It initially had grass growing up around the trunk and after removing that and mulching, I found some fungus that I removed. They looked like some kind of mushroom, but I can't find a picture now. It was also looking thirsty from the hot dry summer so I've been watering with a dripping 5 gallon bucket a few times a week, but it still has many wilted leaves. Only a few berries ripened to red but there are a good number of green berries still on. What can I do to protect the exposed trunk and should I be watering significantly more?", "answer": "You are doing the right thing in watering during hot dry weather. The damaged bark is a bad sight! As long as there is some continuous bark from the ground on up the trunk to the upper branches there is hope that the tree will survive. Do be very careful not to do any more damage."}
 <Example 7 End>
 
-Please  the following Q&A pairs.
+Please revise the following Q&A pairs.
 """
 
         prompt += f"User Query: {item['question']}\nExpert Response: {item['answer']}\n\nModel Output:\n"
