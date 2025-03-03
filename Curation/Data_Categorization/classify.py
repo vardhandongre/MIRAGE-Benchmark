@@ -42,32 +42,55 @@ class ClassifyVQA:
 
 # Please select the most appropriate category based on the content of the question and answer."""
 
+        # Classify based on question, answer, and title
+#         system_prompt = """Please classify the given agricultural multimodal question-answer data into the following categories. Each category includes a detailed description to ensure accurate classification:
 
+# 1. **Plant Identification**: This category includes questions focused solely on identifying the type or species of a plant, without any additional information or context.
+
+# 2. **Insect and Pest Identification**: This includes questions and answers that focus on identifying pests, but do not offer any suggestions or methods for dealing with the pests.
+
+# 3. **Plant Disease Identification**: This includes questions and answers that focus on identifying plant disease, but do not offer any suggestions or methods for dealing with the disease.
+
+# 4. **Plant Disease Management**: Involves providing advice on treatment of plant diseases. If the pair includes both plant disease identification and management recommendations, it belongs to this category.
+
+# 5. **Insect and Pest Management**: The question-answer pair must include suggestions or methods for dealing with pests. If the pair includes both pest identification and management recommendations, it belongs to this category.
+
+# 6. **Weeds/Invasive Plants Management**: The question-answer pair must include suggestions or methods for managing weeds or invasive species. If the pair includes both weed identification and management recommendations, it falls under this category.
+
+# 7. **Plant Care and Gardening Guidance**: Provides advice on managing or improving plant health and general gardening techniques. 
+
+# 8. **Others**: Includes any questions that do not fit into the above categories, such as non-agricultural questions or those that cannot be classified. This also includes scenarios where the expert does not directly answer the user's question, such as asking for more information, suggesting contacting someone else, or indicating they cannot help. 
+
+# Please select the most appropriate category based on the content of the question and answer."""
+
+
+        # Classify only based on question
         system_prompt = """Please classify the given agricultural multimodal question-answer data into the following categories. Each category includes a detailed description to ensure accurate classification:
 
 1. **Plant Identification**: This category includes questions focused solely on identifying the type or species of a plant, without any additional information or context.
 
-2. **Insect and Pest Identification**: This includes questions and answers that focus on identifying pests, but do not offer any suggestions or methods for dealing with the pests.
+2. **Insect and Pest Identification**: This includes questions that focus on identifying pests, but do not ask any suggestions or methods for dealing with the pests.
 
-3. **Plant Disease Identification**: This includes questions and answers that focus on identifying plant disease, but do not offer any suggestions or methods for dealing with the disease.
+3. **Plant Disease Identification**: This includes questions that focus on identifying plant disease, but do not ask any suggestions or methods for dealing with the disease.
 
-4. **Plant Disease Management**: Involves providing advice on treatment of plant diseases. If the pair includes both plant disease identification and management recommendations, it belongs to this category.
+4. **Plant Disease Management**: Involves providing advice on treatment of plant diseases. If the question ask both plant disease identification and management recommendations, it belongs to this category.
 
-5. **Insect and Pest Management**: The question-answer pair must include suggestions or methods for dealing with pests. If the pair includes both pest identification and management recommendations, it belongs to this category.
+5. **Insect and Pest Management**: The question must ask suggestions or methods for dealing with pests. If the question asks both pest identification and management recommendations, it belongs to this category.
 
-6. **Weeds/Invasive Plants Management**: The question-answer pair must include suggestions or methods for managing weeds or invasive species. If the pair includes both weed identification and management recommendations, it falls under this category.
+6. **Weeds/Invasive Plants Management**: The question mustask  suggestions or methods for managing weeds or invasive species. If the question asks both weed identification and management recommendations, it falls under this category.
 
-7. **Plant Care and Gardening Guidance**: Provides advice on managing or improving plant health and general gardening techniques. 
+7. **Plant Care and Gardening Guidance**: Ask for advice on managing or improving plant health and general gardening techniques. 
 
-8. **Others**: Includes any questions that do not fit into the above categories, such as non-agricultural questions or those that cannot be classified. This also includes scenarios where the expert does not directly answer the user's question, such as asking for more information, suggesting contacting someone else, or indicating they cannot help. 
+8. **Others**: Includes any questions that do not fit into the above categories, such as non-agricultural questions or those that cannot be classified.
 
-Please select the most appropriate category based on the content of the question and answer."""
+Please select the most appropriate category based on the content of the question."""
+
         # Categories from Yunze
 #         system_prompt = """You are a helpful assistant tasked with categorizing farming-related questions by their question type. \
 # The question type categories to use are: 'disease', 'weeds/invasive plants management', 'insects/pests control', 'growing advice', 'environmental stress', 'nutrient deficiency', 'generic identification', or 'other'.
 # 'insect control' is for any question that is related to insect issues. 'disease' is for any question about a disease or virus. 'growing advice' is for any question about how to grow or take care of a plant. 'environmental stress' is for any questions that pertain to problems caused by the environment such as heat. 'nutrient deficiency' is for problems that are related to nutrient deficiencies like fertilizers. 'generic identification' is for questions that are purely for entity identification, with nothing related to management or other issues. Only categorize in 'other' as a LAST RESORT.
 # """
-        prompt = f"Title: {item['title']}\nQuestion: {item['question']}\nAnswer: {item['answer']}"
+        prompt = f"Question: {item['question']}"
         
         return {"system": system_prompt, "prompt": prompt}
 
