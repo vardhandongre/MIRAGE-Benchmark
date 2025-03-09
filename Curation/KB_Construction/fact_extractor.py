@@ -56,7 +56,8 @@ class Fact_Extractor:
 These categories are "image description", "management instructions", and "miscellaneous facts". Make sure that "image \
 description" describe the visual qualities that can be referenced in the hypothetical image. \
 If there is no mention of an image description in the conversation, output 'none'. \
-Ensure that miscellaneous facts are independent of the exact situation and are self-contained atomic facts, meaning that each fact is a single coherent entity.
+Ensure that miscellaneous facts are independent of the exact situation and are self-contained atomic facts, meaning that each fact is a single coherent entity. \
+Make sure to extract only the miscellaneous facts contained in the Q&A and do not add any information that does not appear in the Q&A.
 
 Format the response as a json. If no information for specific category is present, output "none".\n\n"""
 
@@ -95,6 +96,15 @@ down) what you can, and remove any regrowth as quickly as it appears. Eventually
 stored energy, and the plant(s) will stop regrowing. ', 'miscellaneous_facts': ['Carolina Horsenettle is native \
 but considered a weed in garden and agricultural settings']}
 </Example2>
+
+<Example3>
+Title: Tree-like sprouts with finger thick roots all over my lawn
+User Question: Can you identify the tree-like sprouts with finger thick roots all over my lawn, and can you tell me how to get rid of it? I have attached a picture of a sprout and a part of the root/runner that was underground. I have a tall tree that an arborist told us is a cherry tree of some kind. I believe it is the tree that is dropping tiny dark red berries every fall.
+Expert Answer: About the only thing you can do is to chop them out and remove as much of the root as possible. There is no preventative.
+
+Model Response:
+{'image_description': 'tree-like sprouts with finger-thick roots', 'management_instructions': 'Chop them out and remove as much of the root as possible.', 'miscellaneous_facts': ['There is no preventative method for these sprouts.']}
+</Example3>
 """
 
         prompt = prefix + "Here are some examples:" + example + "\n\n" + f"Follow the instructions and learn from the examples above to extract the content of following Q&A.\n\nTitle: {item['title']}\nUser Question: {item['question']}\nExpert Answer: {item['answer']}\n\nModel Response: "
@@ -109,7 +119,7 @@ Make sure that "image descriptions" describe the visual qualities that can be re
 If there is no mention of an image description in the conversation, output 'none'. \
 Ensure that management instructions describe the recommended methods in the answer. \
 Ensure that miscellaneous facts are independent of the exact situation and are self-contained atomic facts, meaning \
-that each fact is a single coherent entity.
+that each fact is a single coherent entity. Make sure to extract only the miscellaneous facts contained in the Q&A and do not add any information that does not appear in the Q&A.
 
 Format the response as a JSON. If no information for a specific category is present, output "none".
 """
@@ -148,6 +158,18 @@ Model Response:
   ]
 }
 <Example2/>
+
+<Example3>
+User Question: Something cut my tulip flowers off. Should I be looking to buy insecticide or fencing to prevent this?
+Expert Answer: Definitely fencing.
+
+Model Response:
+{
+  "image_description": "none",
+  "management_instructions": "Install fencing to prevent further damage to tulip flowers.",
+  "miscellaneous_facts": []
+}
+<Example3/>
 """
 
         prompt = prefix + "Here are some examples:" + example + "\n\n" + f"Follow the instructions and learn from the examples above to extract the content of following Q&A.\n\nTitle: {item['title']}\nUser Question: {item['question']}\nExpert Answer: {item['answer']}\n\nModel Response: "
@@ -162,7 +184,7 @@ Make sure that "symptom description" describes the symptoms of the disease. \
 If there is no mention of disease symptoms in the conversation, output 'none'; do not speculate about symptom information. \
 Ensure that management instructions describe the recommended methods in the answer. \
 Ensure that miscellaneous facts are independent of the exact situation and are self-contained atomic facts, meaning \
-that each fact is a single coherent entity.
+that each fact is a single coherent entity. Make sure to extract only the miscellaneous facts contained in the Q&A and do not add any information that does not appear in the Q&A.
 
 Format the response as a JSON. If no information for a specific category is present, output "none".
 """
@@ -201,6 +223,20 @@ Model Response:
   ]
 }
 <Example2/>
+
+<Example3>
+User Question: What is on this apple tree? Attached are pictures of my apple trees. What is on the apple trees and do I need to do something about it?
+Expert Answer: This is lichen and it does not damage the tree.
+
+Model Response:
+{
+  "symptom_description": "none",
+  "management_instructions": "no action needed since lichen does not damage the tree.",
+  "miscellaneous_facts": [
+    "Lichen does not harm trees."
+  ]
+}
+<Example3/> 
 """
 
         prompt = prefix + "Here are some examples:" + example + "\n\n" + f"Follow the instructions and learn from the examples above to extract the content of following Q&A.\n\nTitle: {item['title']}\nUser Question: {item['question']}\nExpert Answer: {item['answer']}\n\nModel Response: "
@@ -215,7 +251,8 @@ Make sure that "image description" describes the symptoms of the disease. \
 If there is no mention of an image description in the conversation, output 'none'. \
 Ensure that management instructions describe the recommended methods in the answer. \
 Ensure that miscellaneous facts are independent of the exact situation and are self-contained atomic facts, meaning \
-that each fact is a single coherent entity.
+that each fact is a single coherent entity. Make sure to extract only the miscellaneous facts contained in the Q&A and do not add any information that does not appear in the Q&A.
+
 
 Format the response as a JSON. If no information for a specific category is present, output "none"."""
 
@@ -254,18 +291,27 @@ Model Response:
   ]
 }
 <Example2/>
+
+<Example3>
+Title: Redbud tree suckers
+User Question: My redbud tree is growing a few suckers at the base of the tree. Do you cut these off or is there something else I need to do about the redbud tree suckers?
+Expert Answer: You can cut them clean to the trunk anytime.
+
+Model Response:
+{
+  "image_description": "Redbud tree suckers growing at the base of the tree.",
+  "management_instructions": "Cut the suckers clean to the trunk anytime.",
+  "miscellaneous_facts": []
+}
+<Example3/>
 """
         prompt = prefix + "Here are some examples:" + example + "\n\n" + f"Follow the instructions and learn from the examples above to extract the content of following Q&A.\n\nTitle: {item['title']}\nUser Question: {item['question']}\nExpert Answer: {item['answer']}\n\nModel Response: "  
         return {"prompt": prompt}
 
     # Plant Identification
     def get_prompt_pi(self, item):
-        prefix = """You are an assistant whose job it is to extract categories of information from a plant identification Q&A. \
-These categories are "image description", and "miscellaneous facts". \
-Make sure that "image description" describes the symptoms of the disease. \
-If there is no mention of an image description in the conversation, output 'none'. \
-Ensure that miscellaneous facts are independent of the exact situation and are self-contained atomic facts, meaning \
-that each fact is a single coherent entity.
+        prefix = """You are an assistant whose job it is to extract categories of information from a plant identification Q&A. These categories are "image description" and "miscellaneous facts." Make sure that "image description" describes the symptoms of the disease. If there is no mention of an image description in the conversation, output 'none'. Ensure that miscellaneous facts are independent of the exact situation and are self-contained atomic facts, meaning that each fact is a single coherent entity. \
+Make sure to extract only the miscellaneous facts contained in the Q&A and do not add any information that does not appear in the Q&A.
 
 Format the response as a JSON. If no information for a specific category is present, output "none"."""
 
@@ -304,6 +350,19 @@ Model Response:
   ]
 }
 <Example2/>
+
+<Example3>
+User Question: What kind of berry tree is this? Can anyone help me identify this? Trying to figure out what it is to understand what pruning etc it needs.
+Expert Answer: Looks like you have a black currant.
+
+Model Response:
+{
+  "image_description": "none",
+  "miscellaneous_facts": [
+    "The tree is identified as a black currant."
+  ]
+}
+<Example3/>
 """
         prompt = prefix + "Here are some examples:" + example + "\n\n" + f"Follow the instructions and learn from the examples above to extract the content of following Q&A.\n\nTitle: {item['title']}\nUser Question: {item['question']}\nExpert Answer: {item['answer']}\n\nModel Response: "
         
@@ -316,7 +375,8 @@ These categories are "image description", and "miscellaneous facts". \
 Make sure that "image description" describes the symptoms of the disease. \
 If there is no mention of an image description in the conversation, output 'none'. \
 Ensure that miscellaneous facts are independent of the exact situation and are self-contained atomic facts, meaning \
-that each fact is a single coherent entity.
+that each fact is a single coherent entity. Make sure to extract only the miscellaneous facts contained in the Q&A and do not add any information that does not appear in the Q&A.
+
 
 Format the response as a JSON. If no information for a specific category is present, output "none"."""
 
@@ -344,6 +404,7 @@ Title: what kind of roach
 User Question: I found this crawling around near my kitchen door this evening. When I tried to catch it, it hopped and ran. I have found two or three in the house before a couple of years ago, again near the kitchen door and once near a sunroom which has a sliding door. All the times I found them in the fall, usually in the evening, but one during the day. Always this size too. I have not seen any adult roaches in or outside the house in the 7 years we've lived here. We find a lot of beetles and other strange bugs in the house often but not roaches. I'm pretty sure this is a roach even though I've never seen one this small. Thanks for your help.
 Expert Answer: I don't think that is a cockroach. Instead, I think it is a young camel cricket. The arched body form and the enlarged hind legs are not what one would see on a cockroach. Plus, your observations of its activity, being out and around in the sunroom during the day, is more consistent with a cricket than a cockroach, which often hides during the day.
 
+Model Response:
 {
   "image_description": "none",
   "miscellaneous_facts": [
@@ -353,7 +414,18 @@ Expert Answer: I don't think that is a cockroach. Instead, I think it is a young
   ]
 }
 <Example2/>
-"""
+
+<Example3>
+User Question: Is this insect a moth? I have seen these around my yard a lot, these two seem to be making more. Can you help me ID it?
+Expert Answer: This is actually a type of fly called a Tiger Bee Fly.
+Model Response:
+{
+  "image_description": "none",
+  "miscellaneous_facts": [
+    "The insect is identified as a Tiger Bee Fly."
+  ]
+}
+<Example3/>"""
         
 
         prompt = prefix + "Here are some examples:" + example + "\n\n" + f"Follow the instructions and learn from the examples above to extract the content of following Q&A.\n\nTitle: {item['title']}\nUser Question: {item['question']}\nExpert Answer: {item['answer']}\n\nModel Response: "
@@ -366,7 +438,7 @@ These categories are "symptom description", and "miscellaneous facts". \
 Make sure that "symptom description" describes the symptoms of the disease. \
 If there is no mention of disease symptoms in the conversation, output 'none'; do not speculate about symptom information. \
 Ensure that miscellaneous facts are independent of the exact situation and are self-contained atomic facts, meaning \
-that each fact is a single coherent entity.
+that each fact is a single coherent entity. Make sure to extract only the miscellaneous facts contained in the Q&A and do not add any information that does not appear in the Q&A.
 
 Format the response as a JSON. If no information for a specific category is present, output "none".
 """
@@ -402,6 +474,18 @@ Model Response:
   ]
 }
 <Example2/>
+
+<Example3>
+Title: Peach Tree Leaf Disease?
+User Question: Peach tree leaf disease? Two peach trees have similar disease symptoms on their leaves. Possibly peach leaf curl.
+Expert Answer: Yes, definitely peach leaf curl.
+
+Model Response:
+{
+  "symptom_description": "none",
+  "miscellaneous_facts": ["The disease is identified as peach leaf curl."]
+}
+<Example3/>
 """
 
         prompt = prefix + "Here are some examples:" + example + "\n\n" + f"Follow the instructions and learn from the examples above to extract the content of following Q&A.\n\nTitle: {item['title']}\nUser Question: {item['question']}\nExpert Answer: {item['answer']}\n\nModel Response: "

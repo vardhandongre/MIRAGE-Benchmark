@@ -69,7 +69,7 @@ Expert's Answer:
 If you compost be sure your compost reaches temperatures that kill fungi and weed seeds. If not, sending your yard waste to a city processor is the better option. Here is more information about apple scab. Good luck!
 Judgement: 
 {"satisfactory": False}
-<Example5>
+<Example6>
 
 <Example7: Ask for more information "take another picture and send it in">
 Expert's Answer:
@@ -90,7 +90,7 @@ Expert's Answer:
 Greetings, This fungus is Phaeolus schweinitzii, the "dyers polypore," so-called because it is used as a dyestuff by crafters.  It is not edible.
 Judgement:
 {"satisfactory": True}
-<Example5>
+<Example9>
 
 Please judge the following answer. 
 """
