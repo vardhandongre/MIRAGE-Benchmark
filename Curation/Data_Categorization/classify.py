@@ -90,7 +90,7 @@ Please select the most appropriate category based on the content of the question
 # The question type categories to use are: 'disease', 'weeds/invasive plants management', 'insects/pests control', 'growing advice', 'environmental stress', 'nutrient deficiency', 'generic identification', or 'other'.
 # 'insect control' is for any question that is related to insect issues. 'disease' is for any question about a disease or virus. 'growing advice' is for any question about how to grow or take care of a plant. 'environmental stress' is for any questions that pertain to problems caused by the environment such as heat. 'nutrient deficiency' is for problems that are related to nutrient deficiencies like fertilizers. 'generic identification' is for questions that are purely for entity identification, with nothing related to management or other issues. Only categorize in 'other' as a LAST RESORT.
 # """
-        prompt = f"Question: {item['question']}"
+        prompt = f"Title: {item['title']}\nQuestion: {item['question']}"
         
         return {"system": system_prompt, "prompt": prompt}
 

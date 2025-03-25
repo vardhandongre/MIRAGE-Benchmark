@@ -13,3 +13,4 @@ dataset/figures
 *.sbatch
 *logs/*
 *.zip
+checkpoint_batches/*
