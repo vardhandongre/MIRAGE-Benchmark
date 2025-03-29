@@ -10,10 +10,10 @@ import argparse
 
 # Define a new Pydantic model for the direct answer check
 class Satisfactory(BaseModel):
-    satisfactory: bool
+    unsatisfactory: bool
     
     def to_json(self):
-        return {"satisfactory": self.satisfactory}
+        return {"unsatisfactory": self.unsatisfactory}
 
 class CheckSatisfactory:
     def __init__(self, raw_data_file, output_file, model_name="gpt-4o-mini", num_processes=None):
@@ -22,106 +22,108 @@ class CheckSatisfactory:
         self.model_name = model_name
         self.num_processes = num_processes if num_processes is not None else os.cpu_count()
 
-    # Modify the prompt to check if the expert's answer is satisfactory
+    # Modify the prompt to check if the expert's answer is unsatisfactory
     def get_prompt(self, item):
-        # prompt for Real VQA dataset 
-#         prefix = """\
-# I am cleaning an agricultural Q&A dataset and need your help to determine \
-# if the expert's answer is satisfactory. If the expert's answer is unsatisfactory, \
-# such as suggesting to contact someone else, asking for more information, \
-# indicating uncertainty, or admitting they cannot help, output {"satisfactory": False}. Otherwise, output {"satisfactory": True}. 
-# Here are some examples to help you understand the task better:
-
-# <Example1: suggesting to contact someone else>
-# Expert's Answer:
-# Good morning Dave,  Thank you for contacting AnswerLine. I would recommend contacting the Linn County Master Gardeners for assistance with your question. They can be reached at <personal data hidden> or their Hortline at<personal data hidden> (Monday - Thursday from 10AM-12PM).'
-# Judgement: 
-# {"satisfactory": False}
-# <Example1>
-
-# <Example2: asking for more information>
-# Expert's Answer: 
-# Dahlias can decline due to fungal diseases, but there are also bacterial and virus problems. Knowing which it is for sure is tough, and sometimes there are multiple issues. Review best cultural practices as listed in FS 95. Are you following those? How did these dahlias grow last year? Are you digging and replanting yearly? Pull up one of the small sick ones. How are the roots? Do they look and smell rotten? Do you find slugs and snails eating the tubers below ground?
-# Judgement: 
-# {"satisfactory": False}
-# <Example2>
-
-# <Example3: indicating uncertainty>
-# Expert's Answer:
-# We can not tell for sure from your photos what your issue is. Possibilities include wildlife burrowing and stormwater issues.
-# Judgement: 
-# {"satisfactory": False}
-# <Example3>
-
-# <Example4: admitting they cannot help>
-# Expert's Answer:
-# Sorry, but our Cooperative Extension System experts can't identify plants outside the U.S.
-# Judgement: 
-# {"satisfactory": False}
-# <Example4>
-
-# <Example5: Satisfactory answer>
-# Expert's Answer:
-# Greetings, This fungus is Phaeolus schweinitzii, the "dyers polypore," so-called because it is used as a dyestuff by crafters.  It is not edible.
-# Judgement:
-# {"satisfactory": True}
-# <Example5>
-
-# Please judge the following answer. 
-# """
-
-        # Prompt for Reformatted VQA dataset
         prefix = """\
-I am cleaning an agricultural Q&A dataset and need your help to determine \
-if the expert's answer is satisfactory. If the expert's answer is unsatisfactory, \
-such as suggesting to contact someone else, asking for more information, \
-indicating uncertainty, or admitting they cannot help, output {"satisfactory": False}. Otherwise, output {"satisfactory": True}. 
-Here are some examples to help you understand the task better:
+I am cleaning an agricultural Q&A dataset and need your help to determine if the expert's answer is unsatisfactory. Analyze each expert answer and respond with ONLY {"unsatisfactory": False} or {"unsatisfactory": True}.
 
-<Example1: suggesting to contact someone else>
-Expert's Answer:
-Not enough information to determine what's wrong with your tree. Part of the damage looks new, yet there appears to be rough irregular damaged bark already present. Are there other symptoms of concern? I suggest you contact a professional tree expert to take a closer look at the entire tree. Here is a link for more information:\u00a0<Link 1>
-Judgement: 
-{"satisfactory": False}
+An expert's answer is UNSATISFACTORY (output {"unsatisfactory": True}) if it:
+1. Suggests contacting someone else (another expert, extension office, professional, etc.)
+2. Asks for more information (e.g., "send another picture", "provide more details", "provide a sample:", expert's response exist “?”)
+3. Expresses uncertainty (e.g., "can't tell for sure", "not able to identify", "possibilities include")
+4. Admits inability to help (e.g., "cannot answer your question", "our group doesn't serve your location")
+5. Expert doesn't answer the question, and asks user to search online for the answer.
+6. Recommending experts
+
+An expert's answer is SATISFACTORY (output {"unsatisfactory": False}) ONLY if it:
+1. Directly addresses the question with specific, actionable information
+2. Provides complete information without requiring external resources
+3. Shows confidence in the expertise being provided
+4. Doesn't defer to other experts or resources for the main answer
+
+Examples:
+
 <Example1>
+Expert's Answer:
+Not enough information to determine what's wrong with your tree. Part of the damage looks new, yet there appears to be rough irregular damaged bark already present. Are there other symptoms of concern? I suggest you contact a professional tree expert to take a closer look at the entire tree. Here is a link for more information: <Link 1>
+Judgment: 
+{"unsatisfactory": True}
+Reason: Expert suggests contacting someone else, and asks for more information, expert asks "Are there other symptoms of concern?".
+</Example1>
 
-<Example2: suggesting to contact someone else>
+<Example2>
 Expert's Answer:
 Hi - I really can't tell what is wrong just from the picture. If the plant is wilting, it might be a root rot disease. We did get a lot of rain last year and through the winter. If it is a root rot disease, there is not much you can do except dig the plant out and replace it with a different species. If you want to confirm that this is the problem, you can send a sample to the UConn Plant Diagnostic Lab (<Link 1>) where they can culture your plant for diseases. Contact them first to see how you would submit a sample.
-Judgement:
-{"satisfactory": False}
-<Example2>
+Judgment:
+{"unsatisfactory": True}
+Reason: Expert expresses uncertainty ("can't tell"), refers to a diagnostic lab, and suggests contacting them.
+</Example2>
 
-<Example3: asking for more information>
+<Example3>
 Expert's Answer: 
 Unfortunately I am not able to identify from the picture provided. Provide a better quality picture and I will give the id another attempt. Where was the plant purchased? Go to the store where purchased and see if they still have this plant? Below are a couple of links to help in identification: <Link 1> <Link 2>
-Judgement: 
-{"satisfactory": False}
-<Example3>
+Judgment: 
+{"unsatisfactory": True}
+Reason: Expert admits inability to identify, asks for more information (better picture).
+</Example3>
 
-<Example4: indicating uncertainty>
+<Example4>
 Expert's Answer:
 We can not tell for sure from your photos what your issue is. Possibilities include wildlife burrowing and stormwater issues.
-Judgement: 
-{"satisfactory": False}
-<Example4>
+Judgment: 
+{"unsatisfactory": True}
+Reason: Expert indicates uncertainty ("cannot tell for sure") and only offers possibilities rather than a definitive answer.
+</Example4>
 
-<Example5: admitting they cannot help>
+<Example5>
 Expert's Answer:
 Unfortunately, our group cannot answer your question because it doesn't serve your location. Please contact your local Cooperative Extension office for assistance. A good way to find your local office is to go to <Link 1> and enter your county or parish name along with your state name. You might also use your favorite search engine and enter \"cooperative extension\" along with your county name.
-Judgement: 
-{"satisfactory": False}
-<Example5>
+Judgment: 
+{"unsatisfactory": True}
+Reason: Expert admits inability to help and directs to contact someone else.
+</Example5>
 
-<Example6: Satisfactory answer>
-Expert's Answer:
-Hello, this is a common problem in Japanese plums, which typically require more pruning than European plums. Using heading cuts when pruning will help with this problem. Below are some publications that discuss pruning plums:<Link 1>
-Judgement:
-{"satisfactory": True}
 <Example6>
+Expert's Answer:
+This is fire blight, a bacterial disease that affects plants in the rose family, particularly pear and apple trees. The characteristic shepherd's crook at the end of branches and blackened leaves are distinctive symptoms. Remove affected branches by cutting at least 12 inches below visible infection. Disinfect your pruning tools between each cut using a 10% bleach solution. Avoid excessive nitrogen fertilization which promotes susceptible new growth. Some copper-based fungicides can help prevent spread but won't cure existing infections.
+Judgment:
+{"unsatisfactory": False}
+Reason: Expert provides a clear identification, explains the symptoms, and offers specific actionable advice without referring elsewhere.
+</Example6>
 
-Please judge the following answer. 
-"""
+<Example7>
+Expert's Answer:
+This appears to be powdery mildew on your zucchini plants. It's a fungal disease that thrives in humid conditions with poor air circulation. To manage it: 1) Remove severely infected leaves, 2) Avoid overhead watering and water at the base of plants in the morning, 3) Ensure adequate spacing between plants for better airflow, 4) Apply a fungicide labeled for powdery mildew on cucurbits - options include sulfur-based products or potassium bicarbonate. Prevention includes choosing resistant varieties for next season.
+Judgment:
+{"unsatisfactory": False}
+Reason: Expert confidently identifies the problem and provides complete, actionable advice without referring to external resources.
+</Example7>
+
+<Example8>
+Expert's Answer:
+I'm guessing it's a spider. You can search for spiders and compare them online to see which one matches yours best.
+Judgement:
+{"unsatisfactory": True}
+Reason: Expert shows the uncertainty and ask user to search information online.
+<Example8>
+
+<Example9>
+Expert's Answer:
+The local insect expert is Kevin. His email is <personal data hidden>.
+Judgement:
+{"unsatisfactory": True}
+Reason: Expert recommends local experts.
+<Example9>
+
+<Example10>
+Expert's Answer:
+What you saw was a turbulent phosphila caterpillar that turns into an ugly moth. It feeds on greenbrier. If you google the the name, you will find all the information on this caterpillar. Thank you for your question.
+Judgement:
+{"unsatisfactory": False}
+Reason: Although expert asks user to search online, but expert already answered the question.
+<Example10>
+
+Please judge the following answer:"""
 
         sample_prompt = f"Expert's Answer:\n{item['answer']}\nJudgement:\n"
         return {"prompt": prefix + "\n" + sample_prompt}
@@ -136,13 +138,11 @@ Please judge the following answer.
             raise ValueError(f"Model '{self.model_name}' not supported.")
       
         try:
-            response = client.chat(prompt=prompt["prompt"], response_format=Satisfactory)
-            item["satisfactory"] = response.satisfactory
-            item["info"] = client.info()
-            item["history"] = client.get_history()
+            response = client.chat(prompt=prompt["prompt"], response_format=Satisfactory, temperature=0)
+            item["unsatisfactory"] = response.unsatisfactory
         except Exception as e:
             print(f"Error processing item {item.get('id', 'unknown')}: {e}")
-            item["satisfactory"] = None
+            item["unsatisfactory"] = None
             
         with lock:
             with open(output_file, 'a', encoding='utf-8') as f:
@@ -160,7 +160,7 @@ Please judge the following answer.
                 for line in f:
                     try:
                         item = json.loads(line)
-                        if "satisfactory" in item and item["satisfactory"] is not None:
+                        if "unsatisfactory" in item and item["unsatisfactory"] is not None:
                             processed_ids.add(item['id'])
                     except json.JSONDecodeError:
                         continue
@@ -188,7 +188,7 @@ Please judge the following answer.
             for line in f:
                 try:
                     item = json.loads(line)
-                    if "satisfactory" in item and item["satisfactory"] is not None:
+                    if "unsatisfactory" in item and item["unsatisfactory"] is not None:
                         valid_items.append(item)
                 except json.JSONDecodeError:
                     continue
@@ -200,7 +200,7 @@ Please judge the following answer.
         print(f"Total successful items: {len(valid_items)}. \n Remaining items to process: {data_length - len(valid_items)}.")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Check if expert answers are satisfactory.")
+    parser = argparse.ArgumentParser(description="Check if expert answers are unsatisfactory.")
     parser.add_argument("--input_file", type=str, required=True, help="Path to the input JSON file.")
     parser.add_argument("--output_file", type=str, required=True, help="Path to the output JSONL file.")
     parser.add_argument("--model_name", type=str, default="gpt-4o", help="Model name to use.")
