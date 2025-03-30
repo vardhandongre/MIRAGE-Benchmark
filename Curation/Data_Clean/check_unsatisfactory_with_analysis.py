@@ -26,7 +26,7 @@ class CheckSatisfactory:
     # Modify the prompt to check if the expert's answer is unsatisfactory with analysis
     def get_prompt(self, item):
         prefix = """\
-I am  cleaning an agricultural Q&A dataset and need your help to determine if the expert's answer is unsatisfactory. Please analyze the expert's answer first, then provide your judgment. \
+I am cleaning an agricultural Q&A dataset and need your help to determine if the expert's answer is unsatisfactory. Please analyze the expert's answer first, then provide your judgment. \
 Your output should be in JSON format like this: {"analysis": "...", "unsatisfactory": true/false}.
 
 An expert's answer is UNSATISFACTORY if it:
@@ -38,7 +38,7 @@ An expert's answer is UNSATISFACTORY if it:
 6. Recommending experts
 
 An expert's answer is SATISFACTORY ONLY if it:
-1. Directly addresses the question with specific, actionable information
+1. Directly addresses the question
 2. Provides complete information without requiring external resources
 3. Shows confidence in the expertise being provided
 4. Doesn't defer to other experts or resources for the main answer

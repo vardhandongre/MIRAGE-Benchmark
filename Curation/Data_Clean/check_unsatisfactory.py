@@ -27,7 +27,7 @@ class CheckSatisfactory:
         prefix = """\
 I am cleaning an agricultural Q&A dataset and need your help to determine if the expert's answer is unsatisfactory. Analyze each expert answer and respond with ONLY {"unsatisfactory": False} or {"unsatisfactory": True}.
 
-An expert's answer is UNSATISFACTORY (output {"unsatisfactory": True}) if it:
+An expert's answer is UNSATISFACTORY if it:
 1. Suggests contacting someone else (another expert, extension office, professional, etc.)
 2. Asks for more information (e.g., "send another picture", "provide more details", "provide a sample:", expert's response exist “?”)
 3. Expresses uncertainty (e.g., "can't tell for sure", "not able to identify", "possibilities include")
@@ -35,8 +35,8 @@ An expert's answer is UNSATISFACTORY (output {"unsatisfactory": True}) if it:
 5. Expert doesn't answer the question, and asks user to search online for the answer.
 6. Recommending experts
 
-An expert's answer is SATISFACTORY (output {"unsatisfactory": False}) ONLY if it:
-1. Directly addresses the question with specific, actionable information
+An expert's answer is SATISFACTORY ONLY if it:
+1. Directly addresses the question
 2. Provides complete information without requiring external resources
 3. Shows confidence in the expertise being provided
 4. Doesn't defer to other experts or resources for the main answer
