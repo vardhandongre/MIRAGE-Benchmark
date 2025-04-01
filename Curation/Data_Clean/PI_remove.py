@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../')
+sys.path.append('../../')
 from chat_models.OpenAI_Chat import GPT4O
 from pydantic import BaseModel
 import json
@@ -48,7 +48,6 @@ Output the result in JSON format. The output format should be:
             item["info"] = client.info()
         except Exception as e:
             print(f"Error processing item {item.get('id', 'unknown')}: {e}")
-            item["is_direct"] = None
             
         with lock:
             with open(output_file, 'a', encoding='utf-8') as f:
