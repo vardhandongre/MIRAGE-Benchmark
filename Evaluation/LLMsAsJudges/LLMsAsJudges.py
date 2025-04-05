@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../')
+sys.path.append('../../')
 from chat_models.OpenAI_Chat import GPT4O
 from chat_models.Gemini import Gemini
 from chat_models.Claude import Claude  # Add Claude import
@@ -146,9 +146,9 @@ Please only output the scores without any other content. You should output JSON 
         while retries < max_retries:
             if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
                 client = GPT4O(model_name=model_name, messages=[])
-            elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash":
+            elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash" or self.model_name == "gemini-2.0-flash":
                 client = Gemini(model_name=model_name, messages=[])
-            elif self.model_name == "claude-3-5-sonnet-latest":
+            elif self.model_name == "claude-3-5-sonnet-latest" or self.model_name == "claude-3-7-sonnet-latest":
                 client = Claude(model_name=model_name, messages=[])
             else:
                 raise ValueError(f"Model '{self.model_name}' not supported.")
@@ -170,13 +170,13 @@ Please only output the scores without any other content. You should output JSON 
                     response = client.chat(prompt=prompt["prompt"], images=prompt["images"], response_format=Score, temperature=0)
                     new_item["score"] = response.to_json()
                     response = response.to_json()
-                elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash":
+                elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash" or self.model_name == "gemini-2.0-flash":
                     response = client.chat(prompt=prompt["prompt"], images=prompt["images"], temperature=0)
                     response = self.extract_json(response)
                     new_item["score"] = response
-                elif self.model_name == "claude-3-5-sonnet-latest":
+                elif self.model_name == "claude-3-5-sonnet-latest" or self.model_name == "claude-3-7-sonnet-latest":
                     client.system = prompt["system"] + "\nOutput only valid JSON with exactly this format: {\"accuracy\": score, \"relevance\": score, \"completeness\": score}"
-                    response = client.chat(prompt=prompt["prompt"], images=prompt["images"], temperature=0)
+                    response = client.chat(prompt=prompt["prompt"], images=prompt["images"])
                     response = self.extract_json(response)
                     new_item["score"] = response
                 

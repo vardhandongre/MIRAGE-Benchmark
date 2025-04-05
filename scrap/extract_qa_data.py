@@ -109,30 +109,45 @@ def scrape_individual_qa(args):
             else:
                 qa_pair['id'] = url
         # Extract the question content
-        question_body = soup.find('div', class_='question_body')
-        if question_body:
-            qa_pair['question'] = question_body.text.strip()
-        # Extract all responses, including multi-turn interactions
-        responses = []
-        response_blocks = soup.find_all('div', class_='response_block')
-        for block in response_blocks:
-            response_text = block.find('div', class_='response')
-            responder = block.find('div', class_='author')
-
-            if response_text:
-                response_info = {
-                    'responder': responder.text.strip() if responder else 'Unknown',
-                    'response': response_text.text.strip()
-                }
-                responses.append(response_info)
-        # Add responses to qa_pair
-        qa_pair['responses'] = responses
-        # Extract attachments
-        attachments = soup.find('div', class_='question-attachments')
-        if attachments:
-            qa_pair['attachments'] = [urljoin(url, img['src']) for img in attachments.find_all('img')]
+        # question_body = soup.find('div', class_='question_body')
+        # if question_body:
+        #     qa_pair['question'] = question_body.text.strip()
+            
+        # Extract time and location
+        # 如果页面中有多个 text-muted 元素，可以遍历或选取第一个
+        time_elements = soup.find_all(class_='text-muted')
+        if time_elements:
+            # 假设第一个元素包含你需要的时间信息
+            qa_pair['asked_time'] = time_elements[0].get_text(strip=True) 
+        
+        location_tags = soup.find_all('span', class_='tag tag-geography')
+        if location_tags:
+            # 可能存在多个地理信息，示例将它们合并成列表
+            qa_pair['location'] = [tag.get_text(strip=True) for tag in location_tags]
         else:
-            qa_pair['attachments'] = []
+            qa_pair['location'] = []            
+            
+        # # Extract all responses, including multi-turn interactions
+        # responses = []
+        # response_blocks = soup.find_all('div', class_='response_block')
+        # for block in response_blocks:
+        #     response_text = block.find('div', class_='response')
+        #     responder = block.find('div', class_='author')
+
+        #     if response_text:
+        #         response_info = {
+        #             'responder': responder.text.strip() if responder else 'Unknown',
+        #             'response': response_text.text.strip()
+        #         }
+        #         responses.append(response_info)
+        # # Add responses to qa_pair
+        # qa_pair['responses'] = responses
+        # # Extract attachments
+        # attachments = soup.find('div', class_='question-attachments')
+        # if attachments:
+        #     qa_pair['attachments'] = [urljoin(url, img['src']) for img in attachments.find_all('img')]
+        # else:
+        #     qa_pair['attachments'] = []
         return qa_pair
     except Exception as e:
         print(f"Error scraping {url}: {str(e)}")
@@ -249,7 +264,7 @@ class QAScraper:
 
                 # Process results in the main process
                 for qa_pair in results:
-                    save_attachments(qa_pair, self.qa_images_folder)
+                    # save_attachments(qa_pair, self.qa_images_folder)
                     save_qa_pair(qa_pair, self.qa_output_file_path)
 
                 time.sleep(2)  # Polite delay to avoid too frequent requests
@@ -267,7 +282,7 @@ def main():
     parser.add_argument('--pages_per_batch', type=int, default=1, help='Number of pages to scrape per batch')
     parser.add_argument('--qa_output_file_path', type=str, default='dataset/raw_data/qa_data_missing.jsonl', help='Path to save QA data')
     parser.add_argument('--qa_images_folder', type=str, default='dataset/qa_images', help='Folder to save attachments')
-    parser.add_argument('--num_workers', type=int, default=4, help='Number of worker processes')
+    parser.add_argument('--num_workers', type=int, default=1, help='Number of worker processes')
     parser.add_argument('--find_missing', default=False, action='store_true', help='Enable scraping of specified missing pages')
     parser.add_argument('--missing_pages_file', default="/home/chigui2/workspace/AgrVQA/logs/page_numbers.txt" , type=str, help='File containing list of missing page numbers')
 

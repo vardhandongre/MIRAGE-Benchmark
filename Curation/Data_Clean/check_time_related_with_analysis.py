@@ -1,6 +1,7 @@
 import sys
 sys.path.append('../../')
 from chat_models.OpenAI_Chat import GPT4O
+from chat_models.Gemini import Gemini
 from pydantic import BaseModel
 import json
 import multiprocessing
@@ -177,13 +178,21 @@ Please judge the following Q&A pair:
 
         if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
             client = GPT4O(model_name=model_name, messages=[])
+        elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash" or self.model_name == "gemini-2.0-flash":
+            client = Gemini(model_name=model_name, messages=[])
         else:
             raise ValueError(f"Model '{self.model_name}' not supported.")
       
         try:
-            response = client.chat(prompt=prompt["prompt"], response_format=Judge)
-            item["time_related"] = response.time_related
-            item["time_related_analysis"] = response.analysis
+            if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
+                response = client.chat(prompt=prompt["prompt"], response_format=Judge)
+                item["time_related"] = response.time_related
+                item["time_related_analysis"] = response.analysis
+            elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash" or self.model_name == "gemini-2.0-flash":
+                response = client.chat(prompt=prompt["prompt"], response_format=Judge)
+                response = json.loads(response)
+                item["time_related"] = response["time_related"]
+                item["time_related_analysis"] = response["analysis"]
         except Exception as e:
             print(f"Error processing item {item.get('id', 'unknown')}: {e}")
             item["time_related"] = None
