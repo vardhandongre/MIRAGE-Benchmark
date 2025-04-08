@@ -76,6 +76,9 @@ class Evaluator:
         for item in data:
             try:
                 ref, pred = self.extract_answers(item)
+                if pred is None or ref is None:
+                    print(f"Skipping item {item.get('id', 'unknown')} due to missing prediction or reference.")
+                    continue
                 all_refs.append(ref)
                 all_preds.append(pred)
             except Exception as e:
