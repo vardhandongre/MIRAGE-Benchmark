@@ -1,10 +1,11 @@
 import sys
-sys.path.append('../')
+sys.path.append('../../')
 from chat_models.OpenAI_Chat import GPT4O
 from chat_models.Client import Client
 from chat_models.UIUC_Chat import UIUC_Chat
 from chat_models.Gemini import Gemini
 from chat_models.Claude import Claude
+from chat_models.Together import llama4
 from pydantic import BaseModel
 import json
 import multiprocessing
@@ -24,10 +25,10 @@ class Generate:
 
     def get_prompt(self, item):
         
-        title = item["title"]
         question = item["question"]
-        images = item.get("attachments", [])
-        user_prompt = f"Title: {title}\nQuestion: {question}"
+        # images = item.get("attachments", [])
+        images = [item.get("attachments", [])[0]]
+        user_prompt = f"Question: {question}"
         
         return {"user": user_prompt, "images": images}
 
@@ -39,14 +40,18 @@ class Generate:
             client = GPT4O(model_name=model_name, messages=[])
         elif self.model_name == "gpt-4o-uiuc":
             client = UIUC_Chat(model_name="gpt-4o", messages=[])
-        elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash":
+        elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash" or self.model_name == "gemini-2.0-flash":
             client = Gemini(model_name=model_name, messages=[])
+        elif self.model_name == "claude-3-5-sonnet-latest" or self.model_name == "claude-3-7-sonnet-latest":
+            client = Claude(model_name=model_name, messages=[])
+        elif self.model_name == "llama4":
+            client = llama4(model_name="meta-llama/Llama-4-Scout-17B-16E-Instruct", messages=[])
         else:
             client = Client(model_name=self.offline_model, openai_api_base=self.openai_api_base, messages=[])
         try:
             response = client.chat(prompt=prompt["user"], images=prompt["images"])
             item[model_name] = response
-            item["info"] = client.info()
+            # item["info"] = client.info()
             item["history"] = client.get_history()
             
         except Exception as e:

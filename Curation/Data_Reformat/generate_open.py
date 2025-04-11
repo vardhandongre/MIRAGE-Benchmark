@@ -193,7 +193,8 @@ if __name__ == "__main__":
         max_num_seqs=args.batch_size,
         hf_overrides={"architectures": architectures},
         limit_mm_per_prompt={"image": 1, "video": 0},
-        max_model_len=32768
+        max_model_len=32768,
+        dtype="bfloat16",
     )
 
     generator = GenerateLocal(
