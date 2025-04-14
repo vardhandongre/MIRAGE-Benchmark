@@ -99,7 +99,7 @@ class GenerateLocal:
             batch_items = items_to_process[i:i + batch_size]
             batch_inputs = []
             # 为每个条目构造输入数据
-            for item in batch_items:
+            for item in tqdm(batch_items, desc="Preparing inputs"):
                 prompt_data = self.get_prompt(item)
                 prompt_str = prompt_data["prompt"]
                 image = None
@@ -166,6 +166,7 @@ if __name__ == "__main__":
     parser.add_argument("--input_file", type=str, required=True, help="Path to the input JSON file.")
     parser.add_argument("--output_file", type=str, required=True, help="Path to the output JSONL file.")
     parser.add_argument("--model_name", type=str, default="llava-hf/llava-1.5-7b-hf", help="Local model to use.")
+    parser.add_argument("--vllm_batch_size", type=int, default=16, help="Batch size for vllm inference.")
     parser.add_argument("--batch_size", type=int, default=16, help="Batch size for processing.")
     parser.add_argument("--num_gpus", type=int, default=1, help="Number of GPUs to use.")
     
@@ -190,7 +191,7 @@ if __name__ == "__main__":
     LOCAL_MODEL = LLM(
         model=args.model_name,
         tensor_parallel_size=args.num_gpus,
-        max_num_seqs=args.batch_size,
+        max_num_seqs=args.vllm_batch_size,
         hf_overrides={"architectures": architectures},
         limit_mm_per_prompt={"image": 1, "video": 0},
         max_model_len=32768,

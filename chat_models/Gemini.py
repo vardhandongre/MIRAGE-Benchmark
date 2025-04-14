@@ -1,21 +1,27 @@
 import os
 from PIL import Image
-import google.generativeai as genai
+from google import genai
+from google.genai import types
+
 import time
 import copy 
 import json
 # Configure the generative AI API
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 class Gemini:
     def __init__(self, model_name="gemini-1.5-pro", messages=[]):
-        self.model = genai.GenerativeModel(model_name=model_name)
+        self.client = genai.Client(api_key=GEMINI_API_KEY)
         self.model_name = model_name
         self.messages = messages
         self.history_info = copy.deepcopy(messages)
         self.max_retries = 5
         # Define pricing per model
         self.pricing = {
+            "gemini-2.0-flash": {
+                "input": 0.100 / 1_000_000,  # $0.100 per 1M input tokens
+                "output": 0.40 / 1_000_000,  # $0.40 per 1M output tokens
+            },
             "gemini-1.5-pro": {
                 "input": 1.25 / 1_000_000,  # $1.25 per 1M input tokens
                 "output": 5.00 / 1_000_000,  # $5.00 per 1M output tokens
@@ -47,17 +53,16 @@ class Gemini:
             try:
                 # Determine response format
                 if response_format:
-                    response = self.model.generate_content(
-                        message,
-                        generation_config=genai.GenerationConfig(
-                            response_mime_type="application/json",
-                            response_schema=response_format,
-                            temperature=temperature
-                        ),
+                    response = self.client.models.generate_content(
+                        model=self.model_name,
+                        contents = message,
+                        config={'response_mime_type': 'application/json',
+                                'response_schema': response_format,
+                                'temperature': temperature},
                     )
                     text_response = response.text
                 else:
-                    response = self.model.generate_content(message, generation_config=genai.GenerationConfig(temperature=temperature))
+                    response = self.client.models.generate_content(model=self.model_name,contents=message, config={'temperature': temperature})
                     text_response = response.text
                 # Assume response gives usage data for token calculations
                 self.input_image_tokens = len(images) * 258  # 258 tokens per image

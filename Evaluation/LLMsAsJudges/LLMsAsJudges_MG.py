@@ -58,46 +58,35 @@ class Scorer:
         if not model_response:
             print(f"Model response is empty for item {item.get('id', 'unknown')}")
 
-        score_criteria = """**Accuracy Definition**: Whether the agricultural facts, species names, and diagnostic conclusions stated in the answer align with expert responses and scientific consensus. Emphasis is placed on the correctness of professional terminology (e.g., naming of disease types), accuracy of key details (e.g., descriptions of lesion characteristics), and logical coherence of causal relationships (e.g., transmission pathways of pests/diseases). *Example: Correctly identifying "wheat stripe rust" and describing "yellow linear lesions with powdery spore masses" would earn high marks, whereas confusing it with "leaf rust" or misdescribing lesion color would result in deductions.*
+        score_criteria = """
+**Accuracy Definition**: Accuracy evaluates whether the agricultural facts, species identification, diagnostic conclusions, and management recommendations provided by the model align with the expert's response. Emphasis is placed on: 1. Correctness of professional terminology (e.g., precise naming of diseases, pests, or invasive species). 2. Accuracy of key details (e.g., descriptions of lesion characteristics, pest behaviors, or plant symptoms). 3. Logical coherence in describing causal relationships (e.g., disease transmission pathways, pest infestation mechanisms). 4. Appropriateness and effectiveness of the proposed management strategies or interventions.
+- 4 points: All agricultural facts, terminologies, diagnostic conclusions, and management recommendations are completely correct, comprehensive, and fully aligned with expert consensus.
+- 3 points: Minor inaccuracies or omissions in terminology, descriptive details, or management advice exist, but the core diagnostic conclusions and recommended management practices remain accurate and effective.
+- 2 points: Noticeable factual errors, misidentifications (species/disease/pests), or suboptimal management suggestions. However, the response still demonstrates partial accuracy or correctness in key aspects.
+- 1 point: Major inaccuracies, such as significant confusion between diseases, pests, or plants, flawed causal logic, or incorrect management practices that could lead to ineffective or detrimental outcomes.
+- 0 points: Entirely incorrect, scientifically invalid, or significantly misleading claims without any alignment with expert consensus.
 
-**Relevance Definition**: Whether the answer directly addresses the visual content (e.g., plant parts in uploaded images) and core needs of the user (e.g., emergency pest/disease management), while excluding irrelevant content. *Example: For a question about "the cause of tomato leaf curling," extensive discussion of fruit storage methods would be deemed irrelevant.*
+**Relevance Definition**: This measures how closely the model’s response matches the scope and focus of expert answers, ensuring it stays on-topic and avoids tangential information. Responses that digress into unrelated agricultural knowledge or overlook critical points tied to the user’s query are considered less relevant.
+- 4 points: The response perfectly mirrors the expert answer and directly addresses the query, using precise terminology and only including question-relevant information.
+- 3 points: The answer is mostly aligned with the expert response and user query, with only minor tangents or slight omissions in details.
+- 2 points: The response contains noticeable deviations or omissions compared to the expert answer, with several off-topic or less relevant points.
+- 1 point: Significant misalignment with the expert answer and the query is evident. The response includes major irrelevant or incorrect content.
+- 0 points: The answer is entirely off-topic, failing to reflect the expert response or address the user query.
 
-**Completeness Definition**: Whether the model’s answer covers all key information points mentioned in expert answers—such as disease identification, preventive measures, treatment plans—to fully address the user’s inquiry. If the model omits critical steps or precautions highlighted in expert answers, it is deemed incomplete. *Example: If an expert answer outlines three steps (identifying the disease, applying chemical treatments, and post-treatment management), but the model only discusses disease identification without mentioning treatment, the response lacks completeness.* 
+**Completeness Definition**: Whether the model’s answer covers all key information points mentioned in expert answers to fully address the user’s inquiry. If the model omits critical steps or precautions highlighted in expert answers, it is deemed incomplete. Emphasis is placed on: 1. Professional Terminology: Uses precise terms (e.g., names of diseases, pests, invasive species). 2. Key Details: Includes comprehensive descriptions (e.g., lesion characteristics, pest behaviors, plant symptoms). 3. Logical Causal Relationships: Fully explains connections (e.g., disease transmission, pest infestation mechanisms). 4. Management Recommendations: Details all necessary strategies and precautions.
+- 4 points: Covers all key points from the gold answer
+- 3 points: Misses 1-2 minor details but addresses core aspects. 
+- 2 points: The response contains noticeable deviations or omissions compared to the expert answer.
+- 1 point: Omits a major component (e.g.,management recommendations).
+- 0 points: Fails to address any key elements of the query.
 
-**Parsimony Definition:**: Whether the answer provides actionable guidance that directly addresses the user’s core needs, delivering a concise and unambiguous conclusion and specific recommendations without extraneous technical details. The response should adhere to Occam’s Razor by avoiding unnecessary complexity and focusing only on what is essential for understanding whether intervention is necessary and what exact steps (if any) need to be taken.  *Example: A response that clearly states "The tree is healthy and requires no treatment," along with a brief, direct explanation, demonstrates parsimony, whereas an extended discussion on multiple disease possibilities that are not supported by the visible evidence would be less parsimonious.*
-
----
-
-### Scoring Guidelines
-
-**1. Accuracy (0-4 points)**  
-- **4 points:** All agricultural facts, terms, and causal relationships are fully correct and align with expert consensus.  
-- **3 points:** Minor errors in terminology or details, but core conclusions remain accurate.  
-- **2 points:** Significant factual errors or misidentified species/diseases, but partial correctness is present.  
-- **1 point:** Major inaccuracies, e.g., confusing diseases or flawed causal logic.  
-- **0 points:** Entirely incorrect or unscientific claims.
-
-**2. Relevance (0-4 points)**  
-- **4 points:** Directly addresses the user’s query; no irrelevant content.  
-- **3 points:** Mostly relevant but includes minor tangential details.  
-- **2 points:** Partially relevant but omits key user-requested elements.  
-- **1 point:** Largely off-topic or misinterprets the core query.  
-- **0 points:** Entirely unrelated to the user’s question.
-
-**3. Completeness (0-4 points)**  
-- **4 points:** Covers all key points from the gold answer (e.g., diagnosis, treatment, prevention).  
-- **3 points:** Misses 1-2 minor details but addresses core aspects.  
-- **2 points:** Omits a major component (e.g., treatment steps).  
-- **1 point:** Only addresses a single aspect superficially.  
-- **0 points:** Fails to address any key elements of the query.
-
-**4. Parsimony (0-4 points)**
-
-- **4 points:** The answer is succinct, clear, and directly addresses the user’s concerns. It offers straightforward, practical guidance that is fully aligned with the visible evidence without any unnecessary details. It embodies the principle of Occam’s Razor.
-- **3 points:** The answer is generally concise and practical, offering useful advice. However, it may include some extraneous details or slight ambiguity that only minimally detracts from its overall clarity and directness.
-- **2 points:** The answer contains relevant information but is overly theoretical or detailed. Extra technical content obscures the key actionable recommendations, making the response less concise and direct.
-- **1 point:** The answer is largely indirect or abstract, with a significant amount of unnecessary information. The lack of clarity in actionable guidance leaves the user uncertain about whether any intervention is needed.
-- **0 points:** The answer fails to provide practical or actionable recommendations and is cluttered with superfluous details, completely missing the concise, straightforward approach required by Occam’s Razor."""
+**Parsimony Definition**: Whether the answer provides actionable guidance that directly addresses the user’s core needs, delivering a concise and unambiguous conclusion and specific recommendations without extraneous technical details. The response should adhere to Occam’s Razor by avoiding unnecessary complexity and focusing only on what is essential for understanding whether intervention is necessary and what exact steps (if any) need to be taken.
+- 4 points: The answer is succinct, clear, and directly addresses the user’s concerns. It offers straightforward, practical guidance that is fully aligned with the visible evidence without any unnecessary details. It embodies the principle of Occam’s Razor.
+- 3 points: The answer is generally concise and practical, offering useful advice. However, it may include some extraneous details or slight ambiguity that only minimally detracts from its overall clarity and directness.
+- 2 points: The answer contains relevant information but is overly theoretical or detailed. Extra technical content obscures the key actionable recommendations, making the response less concise and direct. 
+- 1 point: The answer is largely indirect or abstract, with a significant amount of unnecessary information. The lack of clarity in actionable guidance leaves the user uncertain about whether any intervention is needed.
+- 0 points: The answer fails to provide practical or actionable recommendations and is cluttered with superfluous details, completely missing the concise, straightforward approach required by Occam’s Razor.
+"""
 
         prompt = f"""
 You are now required to rate a model's response to an agriculture-related question. \

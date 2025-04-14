@@ -11,6 +11,7 @@ from gem_metrics.tokenize import default_tokenize_func
 from pycocoevalcap.meteor.meteor import Meteor
 from pycocoevalcap.rouge.rouge import Rouge
 from pycountry import languages
+import gc
 
 class Evaluator:
     def __init__(self, input_file, output_file, expert_name="expert", subject_name="model", metrics_list=None, num_processes=None):
@@ -18,7 +19,7 @@ class Evaluator:
         self.output_file = output_file
         self.expert_name = expert_name
         self.subject_name = subject_name
-        # Only use metrics: bleu, rouge, and meteor.
+        # 默认只使用 bleu, rouge, meteor 这三个指标
         self.metrics_list = metrics_list or ['bleu', 'rouge', 'meteor']
         self.num_processes = num_processes if num_processes is not None else os.cpu_count()
         self.PUNCTUATION = set(string.punctuation)
@@ -31,7 +32,7 @@ class Evaluator:
     
     def extract_answers(self, item):
         """Extract expert (reference) and model (prediction) answers from an item."""
-        # Get expert answer
+        # 获取专家答案
         if self.expert_name not in item:
             if "b_type" in item and self.expert_name in item["b_type"]:
                 expert_answer = item["b_type"][self.expert_name]
@@ -40,7 +41,7 @@ class Evaluator:
         else:
             expert_answer = item[self.expert_name]
         
-        # Get model answer
+        # 获取模型答案
         if self.subject_name not in item:
             if "a_type" in item and self.subject_name in item["a_type"]:
                 model_response = item["a_type"][self.subject_name]
@@ -156,6 +157,8 @@ class Evaluator:
             with lock:
                 with open(output_file, 'a', encoding='utf-8') as f:
                     f.write(json.dumps(result, ensure_ascii=False) + '\n')
+        # 调用垃圾回收，释放内存
+        gc.collect()
         return result.get('id') if result else None
     
     def aggregate_results(self, all_results):
@@ -216,10 +219,10 @@ class Evaluator:
         items_to_process = [item for item in data if item.get("id") not in processed_ids]
         print(f"Processing {len(items_to_process)} items out of {total_count}.")
         
-        # Set up a multiprocessing lock and pool
+        # Set up a multiprocessing lock and pool. 使用 maxtasksperchild 参数避免内存累积问题
         manager = multiprocessing.Manager()
         lock = manager.Lock()
-        pool = multiprocessing.Pool(processes=self.num_processes)
+        pool = multiprocessing.Pool(processes=self.num_processes, maxtasksperchild=50)
         args_list = [(item, self.output_file, lock) for item in items_to_process]
         
         # Process items in parallel with a progress bar; each result is saved immediately

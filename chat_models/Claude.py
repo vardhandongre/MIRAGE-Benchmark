@@ -196,7 +196,8 @@ class Claude:
             except anthropic.APIError as e:
                 if attempt == self.max_retries - 1:
                     raise Exception(f"Failed after {self.max_retries} attempts. Error: {str(e)}")
-                time.sleep(2 ** attempt)  # Exponential backoff
+                # Sleep 20s
+                time.sleep(20)
                 
     def get_history(self) -> List[Dict]:
         """Return the conversation history."""
