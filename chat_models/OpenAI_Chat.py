@@ -28,6 +28,18 @@ class GPT4O():
             "gpt-3.5-turbo-0125": {
                 "input": 0.50 / 1_000_000,  # $0.50 per 1M tokens
                 "output": 1.50 / 1_000_000,  # $1.50 per 1M tokens
+            },
+            "gpt-4.1": {
+                "input": 2.00 / 1_000_000,  # $2.00 per 1M tokens
+                "output": 8.00 / 1_000_000,  # $8.00 per 1M tokens
+            },
+            "gpt-4.1-mini": {
+                "input": 0.400 / 1_000_000,  # $0.400 per 1M tokens
+                "output": 1.600 / 1_000_000,  # $1.600 per 1M tokens
+            },
+            "gpt-4.1-nano":{
+                "input": 0.100 / 1_000_000,  # $0.100 per 1M tokens
+                "output": 0.400 / 1_000_000,  # $0.400 per 1M tokens
             }
         }
         self.input_text_tokens = 0

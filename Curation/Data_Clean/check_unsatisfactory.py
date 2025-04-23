@@ -133,7 +133,7 @@ Please judge the following answer:"""
         item, model_name, output_file, lock = args
         prompt = self.get_prompt(item)
 
-        if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
+        if self.model_name.startswith("gpt"):
             client = GPT4O(model_name=model_name, messages=[])
         elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash" or self.model_name == "gemini-2.0-flash":
             client = Gemini(model_name=model_name, messages=[])
@@ -141,7 +141,7 @@ Please judge the following answer:"""
             raise ValueError(f"Model '{self.model_name}' not supported.")
       
         try:
-            if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
+            if self.model_name.startswith("gpt"):
                 response = client.chat(prompt=prompt["prompt"], response_format=Satisfactory, temperature=0)
                 item["unsatisfactory"] = response.unsatisfactory
             elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash" or self.model_name == "gemini-2.0-flash":

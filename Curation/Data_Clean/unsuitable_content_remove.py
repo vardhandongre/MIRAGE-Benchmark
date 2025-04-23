@@ -43,7 +43,7 @@ If no modifications are required, output:
 {"question": null, "answer": null}
 
 Please ensure that only the unsuitable expressions are removed or modified, and that the rest of the content in the Q&A remains unchanged.
-Please read the following examples carefully and use them as a basis for your output:
+Please read the following examples carefully and use them as a basis for your output:!!Don't remove <Link i> Content!!
 
 
 <Example 1>  
@@ -147,7 +147,7 @@ Please revise the following Q&A pairs.
         item, model_name, output_file, lock = args
         prompt = self.get_prompt(item)
 
-        if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
+        if self.model_name.startswith("gpt"):
             client = GPT4O(model_name=model_name, messages=[])
         else:
             raise ValueError(f"Model '{self.model_name}' not supported.")

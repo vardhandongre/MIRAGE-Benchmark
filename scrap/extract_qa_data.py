@@ -277,8 +277,8 @@ class QAScraper:
 
 def main():
     parser = argparse.ArgumentParser(description='Scrape QA data from a website')
-    parser.add_argument('--start_page', type=int, default=1, help='Starting page number')
-    parser.add_argument('--max_pages', type=int, default=15000, help='Maximum number of pages to scrape')
+    parser.add_argument('--start_page', type=int, default=24400, help='Starting page number')
+    parser.add_argument('--max_pages', type=int, default=29400, help='Maximum number of pages to scrape')
     parser.add_argument('--pages_per_batch', type=int, default=1, help='Number of pages to scrape per batch')
     parser.add_argument('--qa_output_file_path', type=str, default='dataset/raw_data/qa_data_missing.jsonl', help='Path to save QA data')
     parser.add_argument('--qa_images_folder', type=str, default='dataset/qa_images', help='Folder to save attachments')
@@ -287,7 +287,7 @@ def main():
     parser.add_argument('--missing_pages_file', default="/home/chigui2/workspace/AgrVQA/logs/page_numbers.txt" , type=str, help='File containing list of missing page numbers')
 
     args = parser.parse_args()
-    base_url = 'https://ask2.extension.org/kb/index.php'
+    base_url = 'https://ask.extension.org/kb/index.php'
     scraper = QAScraper(
         base_url=base_url,
         qa_output_file_path=args.qa_output_file_path,

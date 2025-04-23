@@ -8,7 +8,8 @@ import PIL.Image
 import gc
 import torch  # 确保已安装torch
 from vllm import LLM, SamplingParams
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoProcessor
+
 
 # 全局变量，用于存放加载的本地模型
 LOCAL_MODEL = None
@@ -21,12 +22,13 @@ class GenerateLocal:
         self.model_name = model_name.split("/")[-1]
         if self.model_name.lower().startswith("llama-4") or self.model_name.lower().startswith("llama-3.2"):
             self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        if self.model_name.lower().startswith("qwen2.5-vl"):
+            self.processor = AutoProcessor.from_pretrained(model_name)
 
     def get_prompt(self, item):
         question = item["question"]
-        attachments = item.get("attachments", [])
-        image_path = attachments[0] if attachments else None
-
+        image_paths = item.get("attachments", [])
+        
         if self.model_name == "llava-v1.6-mistral-7b-hf":
             # LLaVA-1.6
             prompts = f"[INST] <image>\n{question}\n[/INST]"
@@ -36,14 +38,18 @@ class GenerateLocal:
         elif self.model_name.lower().startswith("llava-1.5"):
             # LLaVA-1.5
             prompts = f"USER: <image>\n{question}\nASSISTANT:"
+            
         elif self.model_name.lower().startswith("qwen2.5-vl"):
-            # Qwen2.5-VL
-            prompts = (
-                "<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n"
-                "<|im_start|>user\n<|vision_start|><|image_pad|><|vision_end|>"
-                f"{question}<|im_end|>\n"
-                "<|im_start|>assistant\n"
+            messages = [
+            {
+                "role": "user",
+                "content": [{"type": "image", "image": ""} for _ in image_paths] + [{"type": "text", "text": question}],
+            }
+            ]
+            prompts = self.processor.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
             )
+            
         elif self.model_name.lower().startswith("llama-4") or self.model_name.lower().startswith("llama-3.2"):
             # Llama-4 Scout 模型使用 tokenizer 的 apply_chat_template 方法构建 prompt
             # 构造单轮对话的消息格式
@@ -62,7 +68,7 @@ class GenerateLocal:
             # 默认：直接返回问题文本
             prompts = question
 
-        return {"prompt": prompts, "image_path": image_path}
+        return {"prompt": prompts, "image_paths": image_paths}
 
     def generate(self, batch_size=16):
         # 读取原始数据文件
@@ -102,18 +108,17 @@ class GenerateLocal:
             for item in tqdm(batch_items, desc="Preparing inputs"):
                 prompt_data = self.get_prompt(item)
                 prompt_str = prompt_data["prompt"]
-                image = None
-                if prompt_data["image_path"]:
-                    try:
-                        # 使用上下文管理器加载图像
-                        with PIL.Image.open(prompt_data["image_path"]) as img:
-                            image = img.copy()  # 复制图像数据以便后续使用
-                    except Exception as e:
-                        print(f"Error loading image {prompt_data['image_path']}: {e}")
-                        continue
                 input_dict = {"prompt": prompt_str}
-                if image is not None:
-                    input_dict["multi_modal_data"] = {"image": image}
+                image_list = []
+                for path in prompt_data["image_paths"]:
+                    try:
+                        with PIL.Image.open(path) as img:
+                            image_list.append(img.copy())
+                    except Exception as e:
+                        print(f"Error loading image {path}: {e}")
+                if image_list:
+                    input_dict["multi_modal_data"] = {"image": image_list}
+                
                 batch_inputs.append(input_dict)
 
             try:
@@ -187,14 +192,13 @@ if __name__ == "__main__":
         print(f"Unsupported model name: {args.model_name}")
         sys.exit(1)
 
-    # 在主进程中加载模型，确保只加载一次
     LOCAL_MODEL = LLM(
         model=args.model_name,
         tensor_parallel_size=args.num_gpus,
         max_num_seqs=args.vllm_batch_size,
         hf_overrides={"architectures": architectures},
-        limit_mm_per_prompt={"image": 1, "video": 0},
-        max_model_len=32768,
+        limit_mm_per_prompt={"image": 4, "video": 0},
+        max_model_len=52768,
         dtype="bfloat16",
     )
 

@@ -84,7 +84,7 @@ Please review the following title and question.
         item, model_name, output_file, lock = args
         prompt = self.get_prompt(item)
 
-        if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
+        if self.model_name.startswith("gpt"):
             client = GPT4O(model_name=model_name, messages=[])
         else:
             raise ValueError(f"Model '{self.model_name}' not supported.")

@@ -14,3 +14,5 @@ dataset/figures
 *logs/*
 *.zip
 checkpoint_batches/*
+Curation/Image_Resize/original_images/*
+Curation/Image_Resize/resized_images/*

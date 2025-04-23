@@ -2,7 +2,8 @@ import sys
 sys.path.append('../../')
 from chat_models.OpenAI_Chat import GPT4O
 from chat_models.Gemini import Gemini
-from chat_models.Claude import Claude  # Add Claude import
+from chat_models.Claude import Claude
+from chat_models.Together import llama4
 from pydantic import BaseModel
 import json
 import multiprocessing
@@ -120,12 +121,14 @@ Please only output the scores without any other content. You should output JSON 
         max_retries = 5
         retries = 0
         while retries < max_retries:
-            if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
+            if self.model_name.startswith("gpt"):
                 client = GPT4O(model_name=model_name, messages=[])
-            elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash" or self.model_name == "gemini-2.0-flash":
+            elif self.model_name.startswith("gemini"):
                 client = Gemini(model_name=model_name, messages=[])
             elif self.model_name == "claude-3-5-sonnet-latest" or self.model_name == "claude-3-7-sonnet-latest":
                 client = Claude(model_name=model_name, messages=[])
+            elif self.model_name.startswith("llama"):
+                client = llama4(model_name="meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo", messages=[])
             else:
                 raise ValueError(f"Model '{self.model_name}' not supported.")
             
@@ -142,11 +145,11 @@ Please only output the scores without any other content. You should output JSON 
             }
             
             try:
-                if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
+                if self.model_name.startswith("gpt"):
                     response = client.chat(prompt=prompt["prompt"], response_format=Score, temperature=0)
                     new_item["score"] = response.to_json()
                     response = response.to_json()
-                elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash" or self.model_name == "gemini-2.0-flash":
+                elif self.model_name.startswith("gemini"):
                     response = client.chat(prompt=prompt["prompt"], response_format=Score, temperature=0)
                     response = self.extract_json(response)
                     new_item["score"] = response
@@ -155,7 +158,10 @@ Please only output the scores without any other content. You should output JSON 
                     response = client.chat(prompt=prompt["prompt"])
                     response = self.extract_json(response)
                     new_item["score"] = response
-                
+                elif self.model_name.startswith("llama"):
+                    response = client.chat(prompt=prompt["prompt"], temperature=0)
+                    response = self.extract_json(response)
+                    new_item["score"] = response                
                 assert "accuracy" in response and "relevance" in response and "completeness" in response and "parsimony" in response
                 new_item["info"] = client.info()
                 new_item["history"] = client.get_history()

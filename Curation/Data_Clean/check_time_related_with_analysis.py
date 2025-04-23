@@ -176,7 +176,7 @@ Please judge the following Q&A pair:
         item, model_name, output_file, lock = args
         prompt = self.get_prompt(item)
 
-        if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
+        if self.model_name.startswith("gpt"):
             client = GPT4O(model_name=model_name, messages=[])
         elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash" or self.model_name == "gemini-2.0-flash":
             client = Gemini(model_name=model_name, messages=[])
@@ -184,7 +184,7 @@ Please judge the following Q&A pair:
             raise ValueError(f"Model '{self.model_name}' not supported.")
       
         try:
-            if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
+            if self.model_name.startswith("gpt"):
                 response = client.chat(prompt=prompt["prompt"], response_format=Judge)
                 item["time_related"] = response.time_related
                 item["time_related_analysis"] = response.analysis

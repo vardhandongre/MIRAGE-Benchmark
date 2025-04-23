@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../')
+sys.path.append('../../')
 from chat_models.OpenAI_Chat import GPT4O
 from chat_models.Gemini import Gemini
 from chat_models.Claude import Claude
@@ -28,24 +28,104 @@ class Reformat:
         self.num_processes = num_processes if num_processes is not None else os.cpu_count()
 
     def get_prompt(self, item):
-        system = """
-    I'm currently creating a VQA dataset related to agriculture. \
-    Each Q&A pair features a title, a user-provided question and image, and an answer from an expert. \
-    The expert's response includes a URL. I will provide the text information from the URL. \
-    You need to combine the content from the URL and the expert's answer to reorganize the expert's \
-    response so that it only contains text and is high-quality, providing a more detailed answer to the user's question. \
-    Please do not output links!
+#         system = """\
+# I'm currently creating a VQA dataset related to agriculture. \
+# Each Q&A pair features a user-provided question and images, and an answer from an expert. \
+# The expert's response includes a URL. I will provide the text information from the URL. \
+# You need to combine the content from the URL and the expert's answer to reorganize the expert's \
+# response so that it only contains text and is high-quality, providing a more detailed answer to the user's question. \
+# Please do not output links!
 
-    The title is marked by <Title>, the user's question by <User>, \
-    the expert's response by <Expert>, and the content of the link by <Link i> (indicating the content of the first link).
+# The user's question by <User>, the expert's response by <Expert>, \
+# and the content of the link by <Link i> (indicating the content of the first link).
 
-    Please only output the reformatted answer in English. Please do not output links! You should output JSON with the key reformatted_answer. The eample is shown below:
-    {
-        "reformatted_answer ": ...
-    }
-    """
-        
-        title = item["title"]
+# Please only output the reformatted answer in English. Please do not output links! You should output JSON with the key reformatted_answer. The eample is shown below:
+# {
+#     "reformatted_answer ": ...
+# }"""
+
+#         system = """\
+# You are given a user’s question about an agricultural scenario, \
+# an expert’s original answer (which contains one or more URLs), and the full text content from each URL. \
+# Your job is to merge the expert’s answer with the URL content into a single, high‑quality, text‑only response in English. \
+# Please do not output links!
+
+# Your reformatted answer must satisfy these four criteria:
+
+# 1. **Accuracy**  
+#    - Align precisely with the expert’s original guidance and the provided URL content.  
+#    - Use correct professional terminology (e.g., precise disease or pest names).  
+#    - Preserve all key factual details (e.g., lesion characteristics, pest behavior).  
+#    - Maintain logical coherence in describing causal relationships (e.g., transmission pathways).  
+#    - Ensure every management recommendation or intervention is appropriate and effective.
+
+# 2. **Relevance**  
+#    - Stay strictly on topic: focus only on information directly tied to the user’s question and the expert’s guidance.  
+#    - Avoid introducing unrelated agricultural details or digressions.
+
+# 3. **Completeness**  
+#    - Cover every critical point originally mentioned by the expert or in the URL content:  
+#      - Professional terminology  
+#      - Detailed descriptions of symptoms or behaviors  
+#      - Explanations of causal relationships  
+#      - Full set of management strategies and precautions
+
+# 4. **Parsimony**  
+#    - Provide concise, actionable guidance:  
+#      - Omit any extraneous technical detail that does not aid the user’s immediate decision or understanding.  
+#      - Deliver a clear conclusion and specific next steps, avoiding unnecessary complexity.
+
+# **Input Format**  
+# - `<User>`: the user’s question.  
+# - `<Expert>`: the expert’s original answer (contains URLs).  
+# - `<Link1>`, `<Link2>`, etc.: the textual content extracted from each URL.
+
+# **Output Format**  (Please do not output links!)
+# {
+#   "reformatted_answer": "Your combined, text‑only answer here."
+# }
+# """     
+        system = """\
+You are given a user’s question about an agricultural scenario, an expert’s original answer (which contains one or more URLs), and the full text content from each URL. Your job is to merge the expert’s answer with the URL content into a single, high‑quality, text‑only response in English—without any links—formatted as JSON under the key `reformatted_answer`.
+
+Your reformatted answer must use **only** information present in the expert’s original answer and the provided URL content. Do not introduce any external facts or omit any details from those sources.
+
+Your reformatted answer must satisfy these four criteria:
+
+1. **Accuracy**  
+   - Align precisely with the expert’s original guidance and the provided URL content.  
+   - Use correct professional terminology (e.g., precise disease or pest names).  
+   - Preserve all key factual details (e.g., lesion characteristics, pest behavior).  
+   - Maintain logical coherence in describing causal relationships (e.g., transmission pathways).  
+   - Ensure every management recommendation or intervention is appropriate and effective.
+
+2. **Relevance**  
+   - Stay strictly on topic: focus only on information directly tied to the user’s question and the expert’s guidance.  
+   - Avoid introducing unrelated agricultural details or digressions.
+
+3. **Completeness**  
+   - Cover every critical point originally mentioned by the expert or in the URL content:  
+     - Professional terminology  
+     - Detailed descriptions of symptoms or behaviors  
+     - Explanations of causal relationships  
+     - Full set of management strategies and precautions
+
+4. **Parsimony**  
+   - Provide concise, actionable guidance:  
+     - Omit any extraneous technical detail that does not aid the user’s immediate decision or understanding.  
+     - Deliver a clear conclusion and specific next steps, avoiding unnecessary complexity.
+
+**Input Format**  
+- `<User>`: the user’s question.  
+- `<Expert>`: the expert’s original answer (contains URLs).  
+- `<Link1>`, `<Link2>`, etc.: the textual content extracted from each URL.
+
+**Output Format**  
+{
+  "reformatted_answer": "Your combined, text‑only answer here."
+}
+"""
+
         question = item["question"]
         answer = item["answer"]
         images = item.get("attachments", [])
@@ -61,7 +141,7 @@ class Reformat:
         for i in range(1, len(urls)+1):
             content += f"<Link {i}>" + '\n' + url_contents[str(i)] + '\n' + f"</Link {i}>" + '\n'
         
-        user = f"<Title>{title}</Title>\n<User>{question}</User>\n<Expert>{answer}</Expert>\n{content}"
+        user = f"<User>{question}</User>\n<Expert>{answer}</Expert>\n{content}"
         
         return {"system": system, "user": user, "images": images}
 
@@ -70,9 +150,9 @@ class Reformat:
         item, model_name, output_file, lock = args
         prompt = self.get_prompt(item)
 
-        if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
+        if self.model_name.startswith("gpt"):
             client = GPT4O(model_name=model_name, messages=[{"role": "system", "content": prompt["system"]}])
-        elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash":
+        elif self.model_name.startswith("gemini"):
             client = Gemini(model_name=model_name, messages=[prompt["system"]])
         elif self.model_name == "claude-3-5-sonnet-latest":
             system_prompt = prompt["system"] + "\nVery important: Your response must be a valid JSON string with exactly this format: {\"reformatted_answer\": \"your detailed answer here\"}"
@@ -83,9 +163,9 @@ class Reformat:
       
         try:
             response = client.chat(prompt=prompt["user"], images=prompt["images"], response_format=ReformattedAnswer)
-            if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
+            if self.model_name.startswith("gpt"):
                 item[self.output_name] = response.reformatted_answer
-            elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash":
+            elif self.model_name.startswith("gemini"):
                 response = json.loads(response)
                 item[self.output_name] = response["reformatted_answer"]
             elif self.model_name == "claude-3-5-sonnet-latest":

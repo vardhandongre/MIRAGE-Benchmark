@@ -32,7 +32,10 @@ class Client:
         if response_format is None:
             completion = self.client.chat.completions.create(
                 model=self.model_name,
-                messages=self.messages
+                messages=self.messages,
+                max_completion_tokens=4096,
+                temperature=0.8,
+                top_p=0.95,
             )
             response = completion.choices[0].message.content
             self.messages.append({"role": "assistant", "content": response})

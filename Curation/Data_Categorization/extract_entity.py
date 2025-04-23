@@ -20,6 +20,19 @@ class Entity(BaseModel):
             "aliases": self.aliases
         }
 
+class EntityOther(BaseModel):
+    name: str
+    aliases: List[str]
+    type: str
+
+    def to_json(self):
+        return {
+            "name": self.name,
+            "aliases": self.aliases,
+            "type": self.type
+        }
+
+
 class ExtractEntity:
     def __init__(self, input_file, output_file, model_name="gpt-4o-mini", num_processes=None, plant_only=False):
         self.input_file = input_file
@@ -33,7 +46,7 @@ class ExtractEntity:
         if self.plant_only:
             prompt = """\
 Extract the correct main plants mentioned in the Q&A pairs. Please try to extract specific plant name, and aliases (all in lowercase and in the singular form). \
-If no plant name is mentioned, output "".
+Do not invent names!! If no plant name is mentioned, output "".
 
 Please read the following examples carefully and use them as a basis for your output.
 <Example 1>
@@ -78,7 +91,7 @@ Please extract the plant entities from the following Q&A pairs:\n"""
             ]:
                 prompt = """\
 Extract the correct main plants mentioned in the Q&A pairs. Please try to extract specific plant name, and aliases (all in lowercase and in the singular form). \
-If no plant name is mentioned, output "".
+Do not invent names!! If no plant name is mentioned, output "".
 
 Please read the following examples carefully and use them as a basis for your output.
 <Example 1>
@@ -121,7 +134,7 @@ Please extract the plant entities from the following Q&A pairs:\n"""
             ]:
                 prompt = """\
 Extract the correct main weed/invasive plant mentioned in the Q&A pairs. Please try to extract specific plant name, and aliases (all in lowercase and in the singular form). \
-If no weed/invasive plant name is mentioned, output "".
+Do not invent names!! If no weed/invasive plant name is mentioned, output "".
 
 Please read the following examples carefully and use them as a basis for your output.
 <Example 1>
@@ -163,7 +176,7 @@ Please extract the weed/invasive plant entities from the following Q&A pairs:\n"
                 "Insect and Pest Identification", 
                 "Insect and Pest Management"
             ]:
-                prompt = """Extract the correct main insect and pest mentioned in the question-answer pair. Please try to extract specific insect and pest name, and aliases (all in lowercase and in the singular form). If no insect and pest name is mentioned, output "".
+                prompt = """Extract the correct main insect and pest mentioned in the question-answer pair. Please try to extract specific insect and pest name, and aliases (all in lowercase and in the singular form). Do not invent names!! If no insect and pest name is mentioned, output "".
 
 Please read the following examples carefully and use them as a basis for your output.
 
@@ -207,7 +220,7 @@ Please extract the insect and pest entities from the following Q&A pairs:\n"""
             ]:
                 prompt = """\
 Extract the correct main plant diseases mentioned in the Q&A pairs. Please try to extract specific plant disease name, and aliases (all in lowercase and in the singular form). \
-If no plant disease name is mentioned, output "".
+Do not invent names!! If no plant disease name is mentioned, output "".
 
 Please read the following examples carefully and use them as a basis for your output.
 
@@ -238,22 +251,49 @@ Model Output:
 Please extract the plant disease entities from the following Q&A pairs:
 """ 
                 prompt += f"User Question: {item['question']}\nExpert Answer: {item['answer']}\n\nModel Output:\n"               
-            else:
-                print(f"Category '{item.get('category')}' not supported.")
+            elif item.get("category") in ["Other", "Others"]:
                 prompt = (
                     'Extract the main entity (plant, insect, or disease) mentioned in the question-answer pair. '
                     'If none is mentioned, output "None". '
-                    'Present the result in JSON format as follows: {"entity": ...}\n\n'
+                    'Present the result in JSON format as follows: {"name": "...", "aliases": [...], "type": "plant" or "insect" or "disease"}\n\n'
+                    """
+Please read the following examples carefully and use them as a basis for your output. If no entity is mentioned, output {"name": "", "aliases": [], "type": ""}.
+
+<Example 1>
+User Question: Two peach trees have similar disease symptoms on their leaves. Possibly peach leaf curl.
+Expert Answer: Yes, definitely peach leaf curl.
+
+Model Output:
+{"name": "peach leaf curl", "aliases": [], "type": "disease"}
+<Example 1 End>
+
+<Example 2>
+User Question: What insect is this on my redtwig dogwood leaf?
+Expert Answer: This is probably an immature tree cricket.
+
+Model Output:
+{"name": "tree cricket", "aliases": [], "type": "insect"}
+<Example 2 End>
+
+<Example 3>
+User Question: What is the name of this weed?
+Expert Answer: Chamber bitter, Phyllanthus urinaria. Appearance: Phyllanthus urinaria is an erect to prostrate, slender, glabrous herb, 4-14 in. (10-35 cm) high. 
+
+Model Output:
+{"name": "chamber bitter", "aliases": ["phyllanthus urinaria"]}
+<Example 3 End>"""
+                    
                     f'Q: {item["question"]}\nA: {item["answer"]}'
                 )
-        
+            else:
+                print(f"Unknown category: {item.get('category')}")
         return {"prompt": prompt}
 
     def process_item(self, args):
         item, model_name, output_file, lock = args
         prompt_data = self.get_prompt(item)
         
-        if model_name in ["gpt-4o", "gpt-4o-mini"]:
+        if model_name.startswith("gpt"):
             client = GPT4O(model_name=model_name, messages=[])
         else:
             raise ValueError(f"Model '{model_name}' not supported.")
@@ -270,9 +310,13 @@ Please extract the plant disease entities from the following Q&A pairs:
                     response = client.chat(prompt=prompt_data["prompt"], response_format=Entity)
                     item["plant"] = {"name": response.name, "aliases": response.aliases}
             else:
-                response = client.chat(prompt=prompt_data["prompt"], response_format=Entity)
-                item["entity"] = {"name": response.name, "aliases": response.aliases}
-                
+                if item.get("category") in ["Other", "Others"]:
+                    response = client.chat(prompt=prompt_data["prompt"], response_format=EntityOther)
+                    item["entity"] = {"name": response.name, "aliases": response.aliases, "type": response.type}
+                else:
+                    response = client.chat(prompt=prompt_data["prompt"], response_format=Entity)
+                    item["entity"] = {"name": response.name, "aliases": response.aliases}
+
             item["info"] = client.info()
         except Exception as e:
             print(f"Error processing item {item.get('id', 'unknown')}: {e}")

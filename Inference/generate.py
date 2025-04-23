@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../../')
+sys.path.append('../')
 from chat_models.OpenAI_Chat import GPT4O
 from chat_models.Client import Client
 from chat_models.UIUC_Chat import UIUC_Chat
@@ -26,9 +26,8 @@ class Generate:
     def get_prompt(self, item):
         
         question = item["question"]
-        # images = item.get("attachments", [])
-        images = [item.get("attachments", [])[0]]
-        user_prompt = f"Question: {question}"
+        images = item.get("attachments", [])
+        user_prompt = f"{question}"
         
         return {"user": user_prompt, "images": images}
 
@@ -36,11 +35,11 @@ class Generate:
     def process_item(self, args):
         item, model_name, output_file, lock = args
         prompt = self.get_prompt(item)
-        if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
-            client = GPT4O(model_name=model_name, messages=[])
-        elif self.model_name == "gpt-4o-uiuc":
+        if self.model_name == "gpt-4o-uiuc":
             client = UIUC_Chat(model_name="gpt-4o", messages=[])
-        elif self.model_name == "gemini-1.5-pro" or self.model_name == "gemini-1.5-flash" or self.model_name == "gemini-2.0-flash":
+        elif self.model_name.startswith("gpt"):
+            client = GPT4O(model_name=model_name, messages=[])
+        elif self.model_name.startswith("gemini"):
             client = Gemini(model_name=model_name, messages=[])
         elif self.model_name == "claude-3-5-sonnet-latest" or self.model_name == "claude-3-7-sonnet-latest":
             client = Claude(model_name=model_name, messages=[])

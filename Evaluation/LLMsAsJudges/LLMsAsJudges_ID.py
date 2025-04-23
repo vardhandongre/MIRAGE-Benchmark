@@ -90,7 +90,7 @@ Please output only the JSON object without any additional text.
         max_retries = 5
         retries = 0
         while retries < max_retries:
-            if self.model_name == "gpt-4o" or self.model_name == "gpt-4o-mini":
+            if self.model_name.startswith("gpt"):
                 client = GPT4O(model_name=model_name, messages=[])
             elif self.model_name in ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-2.0-flash"]:
                 client = Gemini(model_name=model_name, messages=[])
@@ -112,7 +112,7 @@ Please output only the JSON object without any additional text.
             }
             
             try:
-                if self.model_name in ["gpt-4o", "gpt-4o-mini"]:
+                if self.model_name.startswith("gpt"):
                     response = client.chat(prompt=prompt["prompt"], response_format=Score, temperature=0)
                     new_item["score"] = response.to_json()
                     response = response.to_json()
