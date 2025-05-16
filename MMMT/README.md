@@ -4,7 +4,7 @@
   <img src="../assets/multiturn_logo.png" alt="MMMT Logo" width="300"/>
 </div>
 
-MMMT is a benchmark framework for evaluating and testing multi-modal, multi-turn conversational AI systems, with a specific focus on agricultural domain applications. The framework supports both text and image inputs, enabling comprehensive testing of AI systems' ability to handle complex, multi-turn conversations with visual context.
+MMMT is a benchmark framework for evaluating and testing multi-modal, multi-turn conversational VLM models. The framework supports both text and image inputs, enabling comprehensive testing of model's ability to handle complex, multi-turn conversations with visual context.
 
 ## Features
 
