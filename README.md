@@ -6,7 +6,7 @@
 
 ## Overview
 
-MIRAGE (Multi-modal Interactive Reasoning and Agricultural Guidance Evaluation) is a comprehensive benchmark for evaluating AI systems in agricultural consultation scenarios. The benchmark consists of two main components:
+MIRAGE: A Benchmark for Multimodal Information-Seeking and Reasoning in Agricultural Expert-Guided Conversations is a comprehensive benchmark for evaluating AI systems in multimodal consultation scenarios. The benchmark consists of two main components:
 
 - [MMST (Multi-Modal Single-Turn)](MMST/README.md) - Single-turn multimodal reasoning tasks
 - [MMMT (Multi-Modal Multi-Turn)](MMMT/README.md) - Multi-turn conversational tasks with visual context
@@ -30,7 +30,7 @@ ds_mmmt = load_dataset("MIRAGE-Benchmark/MIRAGE", "MMMT")
 ## Paper
 
 Our paper is available on arXiv:
-[Simulating User Agents for Embodied Conversational-AI](https://arxiv.org/abs/XXXX.XXXXX)
+[MIRAGE](https://arxiv.org/abs/XXXX.XXXXX)
 
 ## Citation
 
@@ -38,10 +38,10 @@ If you use our benchmark in your research, please cite our paper:
 
 ```bibtex
 @article{mirage2024,
-  title={Simulating User Agents for Embodied Conversational-AI},
+  title={MIRAGE},
   author={Dongre, Vardhan and Gui, Chi and others},
   journal={arXiv preprint arXiv:XXXX.XXXXX},
-  year={2024}
+  year={2025}
 }
 ```
 
