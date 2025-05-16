@@ -54,7 +54,7 @@ For a quick test, two miniature files with identical schema are provided in **`D
 ## 2  Repository layout
 
 ```text
-MIRAGE/
+MMST/
 ├── chat_models
 ├── Datasets
 ├── Evaluation
