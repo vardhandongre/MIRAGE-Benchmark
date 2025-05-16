@@ -104,10 +104,9 @@ task = generate_task(
 ## Evaluation
 
 The framework includes comprehensive evaluation tools to assess:
-- Decision quality (Clarify vs. Respond)
+- Decision Accuracy (Clarify vs. Respond)
 - Goal relevance
-- Response accuracy
-- Multi-turn coherence
+- Utterance Quality
 
 ## Contributing
 
