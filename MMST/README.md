@@ -1,10 +1,16 @@
+# MMST (Multi-Modal Single-Turn) Benchmark
+
+<div align="center">
+  <img src="../assets/singleturn_logo.png" alt="MMST Logo" width="300"/>
+</div>
+
 # MIRAGE‑MMST Benchmark · Evaluation Guide
 
 ## 0  Overview
 
 **MIRAGE‑MMST** probes **single‑turn multimodal reasoning** in real‑world agricultural consultations.  Each instance combines:
 
-* **Question (`q`)** – a farmer’s natural‑language query.
+* **Question (`q`)** – a farmer's natural‑language query.
 * **Image set (`I`)** – one or more user‑supplied photos (crop, pest, symptom, etc.).
 * **Metadata (`meta`)** – timestamp, geo‑location and other contextual hints.
 
@@ -14,7 +20,7 @@ Formally, an instance is $(q,\, I,\, \text{meta}) \in \mathcal{Q}\times\mathcal{
 * **`c`** – causal explanation of the observed symptoms, and
 * **`m`** – evidence‑grounded management recommendation (*included only when the user explicitly requests advice*).
 
-The benchmark measures a model’s ability to (1) detect visual cues, (2) identify agronomic entities, (3) reason causally from multimodal evidence, and (4) deliver precise, context‑appropriate guidance.
+The benchmark measures a model's ability to (1) detect visual cues, (2) identify agronomic entities, (3) reason causally from multimodal evidence, and (4) deliver precise, context‑appropriate guidance.
 
 ### Subsets
 
@@ -27,7 +33,7 @@ The benchmark measures a model’s ability to (1) detect visual cues, (2) identi
 
 ## 1  Dataset access
 
-The full benchmark is on **[Hugging Face Datasets](https://huggingface.co/datasets/MIRAGE-Benchmark/MIRAGE)** :
+The full benchmark is on **[Hugging Face Datasets](https://huggingface.co/datasets/MIRAGE-Benchmark/MIRAGE)** :
 
 ```python
 from datasets import load_dataset
@@ -109,10 +115,10 @@ The script launches parallel evaluators (`LLMsAsJudges_ID.py` or `LLMsAsJudges_M
 bash bash_print_scores.sh
 ```
 
-`print_scores.py` merges instance‑level judgments and prints a tidy table (LaTeX‑ready if desired).  For Management‑Guidance tasks it also reports a **Weighted Sum** metric:
+`print_scores.py` merges instance‑level judgments and prints a tidy table (LaTeX‑ready if desired).  For Management‑Guidance tasks it also reports a **Weighted Sum** metric:
 
 $$
-\text{Weighted Sum}=\frac{2\,\text{Accuracy}+\text{Relevance}+\text{Completeness}+\text{Parsimony}}{6}\;\in[0,1]
+\text{Weighted Sum}=\frac{2\,\text{Accuracy}+\text{Relevance}+\text{Completeness}+\text{Parsimony}}{6}\;\in[0,1]
 $$
 
 ---
@@ -123,8 +129,8 @@ $$
 
 | Metric                      | Range | Definition                                                                                                                     |
 | --------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------ |
-| **Identification Accuracy** | 0 / 1 | 1 if the predicted entity matches any gold `entity_name`, `scientific_name` or `common_names` (case‑insensitive); otherwise 0. |
-| **Reasoning Accuracy**      | 0–4   | Agreement with expert rationale based on key visual clues, descriptive precision, and logical causal links.                    |
+| **Identification Accuracy** | 0 / 1 | 1 if the predicted entity matches any gold `entity_name`, `scientific_name` or `common_names` (case‑insensitive); otherwise 0. |
+| **Reasoning Accuracy**      | 0–4   | Agreement with expert rationale based on key visual clues, descriptive precision, and logical causal links.                    |
 
 **Reasoning Accuracy rubric**
 
@@ -136,16 +142,16 @@ $$
 | **1** | ≤1 vague clue, no causal link.                                |
 | **0** | Off‑topic or no usable observation.                           |
 
-### 4.2 Management Guidance (MG)
+### 4.2 Management Guidance (MG)
 
 Each facet is scored 0–4.
 
 | Facet            | Focus                                                                                     |
 | ---------------- | ----------------------------------------------------------------------------------------- |
 | **Accuracy**     | Correctness of agricultural facts, species names, diagnoses, causal logic.                |
-| **Relevance**    | Alignment with visible evidence and the user’s stated needs; excludes irrelevant content. |
-| **Completeness** | Coverage of all key points in the expert answer (diagnosis, treatment, prevention …).     |
-| **Parsimony**    | Clarity & conciseness—actionable guidance without unnecessary complexity (Occam’s Razor). |
+| **Relevance**    | Alignment with visible evidence and the user's stated needs; excludes irrelevant content. |
+| **Completeness** | Coverage of all key points in the expert answer (diagnosis, treatment, prevention …).     |
+| **Parsimony**    | Clarity & conciseness—actionable guidance without unnecessary complexity (Occam's Razor). |
 
 **MG rubric (excerpt)**
 
@@ -161,6 +167,6 @@ Each facet is scored 0–4.
 
 ## 5  License
 
-Dataset — **CC‑BY‑NC‑SA‑4.0**
+Dataset — **CC‑BY‑NC‑SA‑4.0**
 
-Code     — **Apache 2.0**
+Code     — **Apache 2.0**

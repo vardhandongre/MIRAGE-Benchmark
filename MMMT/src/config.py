@@ -1,0 +1,8 @@
+import os
+
+MODEL_NAME = "gpt-4o"
+BATCH_SIZE = 500
+HF_REPO = ""
+CONFIG_NAME = ""
+HF_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
+OPENAI_KEY = os.getenv("OPENAI_API_KEY")
