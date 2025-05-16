@@ -118,7 +118,7 @@ bash bash_print_scores.sh
 `print_scores.py` merges instance‑level judgments and prints a tidy table (LaTeX‑ready if desired).  For Management‑Guidance tasks it also reports a **Weighted Sum** metric:
 
 $$
-\text{Weighted Sum}=\frac{2\,\text{Accuracy}+\text{Relevance}+\text{Completeness}+\text{Parsimony}}{6}\;\in[0,1]
+\text{Weighted Sum}=\frac{2*\text{Accuracy}+\text{Relevance}+\text{Completeness}+\text{Parsimony}}{20}\;\in[0,1]
 $$
 
 ---
