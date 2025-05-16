@@ -1,7 +1,7 @@
 # MMST (Multi-Modal Single-Turn) Benchmark
 
 <div align="center">
-  <img src="../assets/singleturn_logo.png" alt="MMST Logo" width="300"/>
+  <img src="../assets/singleturn_logo.png" alt="MMST Logo" width="200"/>
 </div>
 
 # MIRAGE‑MMST Benchmark · Evaluation Guide
