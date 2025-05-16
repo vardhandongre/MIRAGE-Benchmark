@@ -5,8 +5,7 @@ import math
 from PIL import Image
 import os
 
-# TOGETHER_API_KEY = os.environ.get("TOGETHER_API_KEY")
-TOGETHER_API_KEY = "tgp_v1_b6aVVe3MFdqAY-iyJE6F5L8jZyYu59ig4xJ9KvI8mRg"
+TOGETHER_API_KEY = os.environ.get("TOGETHER_API_KEY")
 
 # Function to encode the image
 def encode_image(image_path):
