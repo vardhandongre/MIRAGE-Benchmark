@@ -24,7 +24,8 @@ ds_standard = load_dataset("MIRAGE-Benchmark/MIRAGE", "MMST_Standard")
 ds_contextual = load_dataset("MIRAGE-Benchmark/MIRAGE", "MMST_Contextual")
 
 # Load MMMT dataset
-ds_mmmt = load_dataset("MIRAGE-Benchmark/MIRAGE", "MMMT")
+ds_mmmt_direct = load_dataset("MIRAGE-Benchmark/MIRAGE", "MMMT_Direct")
+ds_mmmt_decomp = load_dataset("MIRAGE-Benchmark/MIRAGE", "MMMT_Decomp")
 ```
 
 ## Paper
