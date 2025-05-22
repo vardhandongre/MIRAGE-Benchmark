@@ -1,4 +1,4 @@
-# AgriAsk-MultiTurn Task
+# MIRAGE-MultiTurn Task
 
 The AgriAsk-MultiTurn Task is designed to evaluate language models' ability to handle multi-turn agricultural conversations, specifically focusing on the "clarify or respond" decision-making process.
 
