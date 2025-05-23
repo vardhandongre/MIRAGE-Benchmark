@@ -87,7 +87,7 @@ We uses three open‑source reasoning models for evaluation:
 
 * `microsoft/Phi-4-reasoning`
 * `Qwen/Qwen3-32B`
-* `DeepSeek-R1-Distill-Llama-70B`
+* `deepseek-ai/DeepSeek-R1-Distill-Llama-70B`
 
 We recommend serving them with **[vLLM](https://github.com/vllm-project/vllm)** (or any OpenAI‑compatible endpoint).
 
