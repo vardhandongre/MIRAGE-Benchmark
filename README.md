@@ -30,18 +30,22 @@ ds_mmmt_decomp = load_dataset("MIRAGE-Benchmark/MIRAGE", "MMMT_Decomp")
 
 ## Paper
 
+**MIRAGE: A Benchmark for Multimodal Information-Seeking and Reasoning in Agricultural Expert-Guided Conversations**
+
+**Authors:** Vardhan Dongre, Chi Gui, Shubham Garg, Hooshang Nayyeri, Gokhan Tur, Dilek Hakkani-Tür, Vikram S. Adve
+
 Our paper is available on arXiv:
-[MIRAGE](https://arxiv.org/abs/XXXX.XXXXX)
+[MIRAGE: A Benchmark for Multimodal Information-Seeking and Reasoning in Agricultural Expert-Guided Conversations](https://arxiv.org/abs/2506.20100)
 
 ## Citation
 
 If you use our benchmark in your research, please cite our paper:
 
 ```bibtex
-@article{mirage2024,
-  title={MIRAGE},
-  author={Dongre, Vardhan and Gui, Chi and others},
-  journal={arXiv preprint arXiv:XXXX.XXXXX},
+@article{dongre2025mirage,
+  title={MIRAGE: A Benchmark for Multimodal Information-Seeking and Reasoning in Agricultural Expert-Guided Conversations},
+  author={Dongre, Vardhan and Gui, Chi and Garg, Shubham and Nayyeri, Hooshang and Tur, Gokhan and Hakkani-T{\"u}r, Dilek and Adve, Vikram S},
+  journal={arXiv preprint arXiv:2506.20100},
   year={2025}
 }
 ```
